@@ -1,0 +1,59 @@
+# Vigil — git attributes.
+#
+# Unity's YAML merge tool can resolve scene/prefab conflicts, but ONLY if git
+# treats these as text and hands it both sides. Marking them binary (the common
+# reflex, because they look like generated files) makes every concurrent edit an
+# unresolvable conflict.
+
+* text=auto
+
+# ---------------------------------------------------------------------------
+# Unity serialized assets — text, and merged with UnityYAMLMerge.
+# Configure once per machine:
+#   git config merge.unityyamlmerge.name "Unity SmartMerge"
+#   git config merge.unityyamlmerge.driver '"C:/Program Files/Unity/Hub/Editor/6000.0.25f1/Editor/Data/Tools/UnityYAMLMerge.exe" merge -p "$BASE" "$REMOTE" "$LOCAL" "$MERGED"'
+# ---------------------------------------------------------------------------
+*.unity      merge=unityyamlmerge eol=lf
+*.prefab     merge=unityyamlmerge eol=lf
+*.asset      merge=unityyamlmerge eol=lf
+*.mat        merge=unityyamlmerge eol=lf
+*.anim       merge=unityyamlmerge eol=lf
+*.controller merge=unityyamlmerge eol=lf
+*.physicMaterial merge=unityyamlmerge eol=lf
+*.meta       merge=unityyamlmerge eol=lf
+
+# ---------------------------------------------------------------------------
+# Source and config — always LF so the repo is identical on every platform.
+# ---------------------------------------------------------------------------
+*.cs      text diff=csharp eol=lf
+*.asmdef  text eol=lf
+*.json    text eol=lf
+*.md      text eol=lf
+*.yml     text eol=lf
+*.uss     text eol=lf
+*.uxml    text eol=lf
+*.shader  text eol=lf
+*.hlsl    text eol=lf
+*.cginc   text eol=lf
+
+# PowerShell keeps CRLF — some Windows hosts are picky about it.
+*.ps1 text eol=crlf
+
+# ---------------------------------------------------------------------------
+# Binary. Listed explicitly so a stray diff attempt never corrupts one.
+#
+# NOT currently using Git LFS: this project generates its content from code and
+# ships no binary art, so the repo is ~1 MB. Add LFS at the point real assets
+# arrive — turning it on before then is pure setup cost for every contributor.
+# ---------------------------------------------------------------------------
+*.png  binary
+*.jpg  binary
+*.tga  binary
+*.psd  binary
+*.fbx  binary
+*.wav  binary
+*.ogg  binary
+*.mp3  binary
+*.dll  binary
+*.so   binary
+*.unitypackage binary

@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b125b2be878cfe7498715bdb40206811, type: 3}
+  m_Name: VigilConfigRegistry
+  m_EditorClassIdentifier: 
+  _perception: {fileID: 11400000, guid: bdab6d0c985781c4088fa9c5a50eb5d2, type: 2}
+  _navigation: {fileID: 11400000, guid: 3a4eae84f4abeec42b61bb2fd3a7765f, type: 2}
+  _antagonist: {fileID: 11400000, guid: 0312dec164df59a41bfd59a904840e87, type: 2}
+  _additionalArchetypes: []
+  _director: {fileID: 11400000, guid: c8e7b041fbdbd8c449a3514c67167a24, type: 2}
+  _movement: {fileID: 11400000, guid: b5ba7285ba3da9249be0ced4477f1da6, type: 2}
+  _composure: {fileID: 11400000, guid: db9c26fd969428a41aa34b2c5fd9e8ba, type: 2}
+  _gameplay: {fileID: 11400000, guid: d720278b8d4031a42a707d92d337a829, type: 2}
+  _network: {fileID: 11400000, guid: 8e0335352c5ff37429cb8d0e5ad70377, type: 2}
+  _audio: {fileID: 11400000, guid: 247c71448918ae44581b82378300ff6f, type: 2}

@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e8657349444a2d419263442912d1228, type: 3}
+  m_Name: Archetype_Occupant
+  m_EditorClassIdentifier: 
+  _displayName: The Occupant
+  _faction: 2
+  _perception: {fileID: 11400000, guid: bdab6d0c985781c4088fa9c5a50eb5d2, type: 2}
+  _navigation: {fileID: 11400000, guid: 3a4eae84f4abeec42b61bb2fd3a7765f, type: 2}
+  _moveSpeed:
+  - 1.5
+  - 2.1
+  - 2.4
+  - 1.7
+  - 4.6
+  _acceleration: 9
+  _turnRateDegrees: 240
+  _attackRange: 2.1
+  _attackDamage: 55
+  _attackWindup: 0.45
+  _attackCommit: 0.3
+  _attackRecover: 0.6
+  _attackCooldown: 2.2
+  _grappleDuration: 3.5
+  _grappleDps: 22
+  _maxHealth: 1000
+  _stunDuration: 4.5
+  _maxSearchRegions: 5
+  _investigateDwell: 3.2
+  _leashRadius: 220
+  _minimumBudget: 4

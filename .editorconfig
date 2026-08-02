@@ -1,0 +1,43 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml,uxml,uss}]
+indent_size = 2
+
+[*.{asmdef,asmref}]
+indent_size = 4
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.cs]
+# ---- Naming -------------------------------------------------------------
+dotnet_naming_rule.private_fields_underscore.severity = warning
+dotnet_naming_rule.private_fields_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_underscore.style = underscore_camel
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_style.underscore_camel.required_prefix = _
+dotnet_naming_style.underscore_camel.capitalization = camel_case
+
+# ---- Style --------------------------------------------------------------
+csharp_new_line_before_open_brace = all
+csharp_prefer_braces = true:warning
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+dotnet_style_readonly_field = true:warning
+dotnet_sort_system_directives_first = true
+
+# ---- Performance rules that matter in a shipping game loop --------------
+# Boxing / allocation in hot paths is a review-blocker, surfaced as warnings.
+dotnet_diagnostic.CA1806.severity = warning   # do not ignore method results
+dotnet_diagnostic.CA2000.severity = warning   # dispose objects before losing scope
+dotnet_diagnostic.CS0649.severity = none      # [SerializeField] fields assigned by Unity
+dotnet_diagnostic.CS0414.severity = suggestion

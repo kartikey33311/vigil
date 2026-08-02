@@ -1,0 +1,27 @@
+{
+    "name": "Vigil.Bootstrap",
+    "rootNamespace": "Vigil.Bootstrap",
+    "references": [
+        "Vigil.Core",
+        "Vigil.Data",
+        "Vigil.Net",
+        "Vigil.AI",
+        "Vigil.Gameplay",
+        "Vigil.Audio",
+        "Vigil.UI",
+        "Unity.Netcode.Runtime",
+        "Unity.InputSystem",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.AI.Navigation"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,42 @@
+{
+    "name": "Vigil.Net",
+    "rootNamespace": "Vigil.Net",
+    "references": [
+        "Vigil.Core",
+        "Vigil.Data",
+        "Unity.Netcode.Runtime",
+        "Unity.Networking.Transport",
+        "Unity.Collections",
+        "Unity.Burst",
+        "Unity.Mathematics",
+        "Unity.Services.Core",
+        "Unity.Services.Authentication",
+        "Unity.Services.Relay",
+        "Unity.Services.Lobbies"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.services.relay",
+            "expression": "1.0.0",
+            "define": "VIGIL_UGS_RELAY"
+        },
+        {
+            "name": "com.unity.services.lobby",
+            "expression": "1.0.0",
+            "define": "VIGIL_UGS_LOBBY"
+        },
+        {
+            "name": "com.unity.services.authentication",
+            "expression": "3.0.0",
+            "define": "VIGIL_UGS_AUTH"
+        }
+    ],
+    "noEngineReferences": false
+}

@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51ef0e39e58cf1041966abec2e6cd6bb, type: 3}
+  m_Name: GameplayConfig
+  m_EditorClassIdentifier: 
+  _interactionRange: 2.6
+  _defaultHoldDuration: 1.1
+  _interactableMask:
+    serializedVersion: 2
+    m_Bits: 2048
+  _doorSwingSeconds: 0.55
+  _doorBarricadeSeconds: 3.5
+  _doorHealth: 160
+  _doorNoiseRadius: 15
+  _generatorsRequired: 3
+  _generatorRepairSeconds: 26
+  _generatorStages: 4
+  _generatorNoiseRadius: 34
+  _bleedOutSeconds: 55
+  _reviveSeconds: 5.5
+  _maxHealth: 100
+  _extractionWindowSeconds: 70
+  _inventorySlots: 4

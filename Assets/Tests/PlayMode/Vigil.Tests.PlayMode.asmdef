@@ -1,0 +1,33 @@
+{
+    "name": "Vigil.Tests.PlayMode",
+    "rootNamespace": "Vigil.Tests",
+    "references": [
+        "Vigil.Core",
+        "Vigil.Data",
+        "Vigil.Net",
+        "Vigil.AI",
+        "Vigil.Gameplay",
+        "Vigil.Audio",
+        "Vigil.UI",
+        "Vigil.Bootstrap",
+        "Unity.Netcode.Runtime",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.AI.Navigation",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

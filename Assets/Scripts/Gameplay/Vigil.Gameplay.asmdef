@@ -1,0 +1,26 @@
+{
+    "name": "Vigil.Gameplay",
+    "rootNamespace": "Vigil.Gameplay",
+    "references": [
+        "Vigil.Core",
+        "Vigil.Data",
+        "Vigil.Net",
+        "Vigil.AI",
+        "Vigil.Audio",
+        "Unity.Netcode.Runtime",
+        "Unity.InputSystem",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Burst",
+        "Unity.AI.Navigation"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

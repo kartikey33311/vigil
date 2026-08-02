@@ -1,0 +1,68 @@
+# -----------------------------------------------------------------------------
+# Vigil — Fly.io deployment.
+#
+# Fly is used here because it is one of the few managed platforms that supports
+# RAW UDP. Netcode for GameObjects runs on Unity Transport over UDP, which rules
+# out every HTTP-only platform (Vercel, Netlify, Cloudflare Pages) and also rules
+# out Railway and most PaaS offerings, which terminate TCP only.
+#
+#   fly launch --no-deploy      # once, to create the app
+#   fly deploy
+#   fly status
+#   fly logs
+#
+# TWO THINGS THAT WILL SILENTLY BREAK THIS IF CHANGED:
+#
+#   1. The UDP handler MUST be paired with a dedicated IPv4 address:
+#        fly ips allocate-v4
+#      Fly's shared IPv4 pool does not forward UDP. Without a dedicated address
+#      the server binds successfully, reports healthy, and never receives a single
+#      packet.
+#
+#   2. For UDP, the process must bind to the special address `fly-global-services`
+#      rather than 0.0.0.0. That is what VIGIL_BIND below does. A server bound to
+#      0.0.0.0 on Fly listens forever and hears nothing, with no error to explain it.
+# -----------------------------------------------------------------------------
+
+app = "vigil-server"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  VIGIL_SERVER = "1"
+  VIGIL_PORT = "7777"
+  # See note 2 above. This is not a typo and must not be "0.0.0.0" on Fly.
+  VIGIL_BIND = "fly-global-services"
+  VIGIL_MAX_PLAYERS = "4"
+  VIGIL_LEVEL = "Level_Facility"
+  VIGIL_LOG = "Session,Net,Core"
+
+[[services]]
+  internal_port = 7777
+  protocol = "udp"
+
+  [[services.ports]]
+    port = 7777
+
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 4
+    soft_limit = 4
+
+[[vm]]
+  # A 30 Hz authoritative simulation with one antagonist and four players is not
+  # demanding, but it IS latency-sensitive: a shared/burstable CPU produces
+  # periodic stalls that players read as rubber-banding. Start here and profile.
+  size = "shared-cpu-1x"
+  memory = "1gb"
+  cpus = 1
+
+# Deliberately NO auto_stop_machines / min_machines_running = 0.
+#
+# Scale-to-zero is wrong for a game server: the wake-up takes seconds, and a
+# player's connection attempt arrives as a single UDP packet that is simply
+# dropped while the machine boots. They see "cannot connect", not "starting".
+[deploy]
+  strategy = "immediate"

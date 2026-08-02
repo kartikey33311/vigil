@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fede134684fa7a24993de3359ce875d4, type: 3}
+  m_Name: AudioConfig
+  m_EditorClassIdentifier: 
+  _transmission:
+  - 1
+  - 0.55
+  - 0.48
+  - 0.62
+  - 0.3
+  - 0.22
+  - 0.7
+  - 0.8
+  _cutoffOpen: 22000
+  _cutoffOccluded: 780
+  _maxOcclusionBlockers: 4
+  _occlusionSolvesPerFrame: 6
+  _occlusionSmoothing: 0.18
+  _maxPropagationHops: 2
+  _perHopAttenuation: 0.25
+  _musicIntensity:
+  - 0.5
+  - 1
+  - 0.3
+  - 0.08
+  _ambientBedAtPeak: 0.12
+  _stingerCooldown:
+  - 6
+  - 12
+  - 8
+  - 3
+  - 10
+  - 15
+  - 45
+  - 20
+  _emitterPoolSize: 24

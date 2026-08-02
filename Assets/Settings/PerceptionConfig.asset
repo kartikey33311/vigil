@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0967ccc2879882b4f88f630a8f85209a, type: 3}
+  m_Name: PerceptionConfig
+  m_EditorClassIdentifier: 
+  _focusHalfAngle: 18
+  _focusRange: 34
+  _midHalfAngle: 62
+  _midRange: 18
+  _nearRange: 4.5
+  _visibilitySamples: 3
+  _occlusionMask:
+    serializedVersion: 2
+    m_Bits: 13313
+  _sightGainByDistance:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  _sightGainByAngle:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  _darknessVisibility: 0.28
+  _minTimeToDetect: 0.55
+  _channelGain:
+  - 1
+  - 0.55
+  - 0.3
+  - 1
+  - 0.22
+  - 0.85
+  _tagWeights: []
+  _occlusionTransmission: 0.45
+  _soundLocalisationError: 7.5
+  _decayPerSecond:
+  - 0.3
+  - 0.16
+  - 0.1
+  - 0.07
+  - 0.05
+  _hysteresisDamping: 0.35
+  _hysteresisBand: 0.06
+  _confidenceHalfLife: 4.5
+  _scentLifetime: 22
+  _scentDropInterval: 2.5
+  _scentRange: 6
+  _maxVisionCandidatesPerTick: 8
+  _busCellSize: 12

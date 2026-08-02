@@ -1,0 +1,23 @@
+{
+    "name": "Vigil.AI",
+    "rootNamespace": "Vigil.AI",
+    "references": [
+        "Vigil.Core",
+        "Vigil.Data",
+        "Vigil.Net",
+        "Unity.Netcode.Runtime",
+        "Unity.AI.Navigation",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Burst"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,75 @@
+# ---------------------------------------------------------------------------
+# Unity generated
+# ---------------------------------------------------------------------------
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# Never ignore Asset meta data — Unity identity lives in .meta files.
+!/[Aa]ssets/**/*.meta
+
+# ---------------------------------------------------------------------------
+# Asset store / third party drops
+# ---------------------------------------------------------------------------
+/[Aa]ssets/AssetStoreTools*
+/[Aa]ssets/Plugins/Editor/JetBrains*
+
+# ---------------------------------------------------------------------------
+# IDE / tooling
+# ---------------------------------------------------------------------------
+.vs/
+.vscode/
+.idea/
+.gradle/
+ExportedObj/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# ---------------------------------------------------------------------------
+# OS
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------------------------------------------------------------------------
+# Builds & crash dumps
+# ---------------------------------------------------------------------------
+*.apk
+*.aab
+*.unitypackage
+*.app
+crashlytics-build.properties
+sysinfo.txt
+
+# ---------------------------------------------------------------------------
+# Local secrets — never commit UGS project keys or dedicated server tokens
+# ---------------------------------------------------------------------------
+/Assets/Settings/Local/
+*.env
+secrets.json
+ProjectSettings/ServicesProjectSettings.json
+
+# ---------------------------------------------------------------------------
+# Local CI / verification scratch
+# ---------------------------------------------------------------------------
+/Tools/_local/
+/*.log

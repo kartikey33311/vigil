@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d099f42994c86234280133374672a256, type: 3}
+  m_Name: DirectorConfig
+  m_EditorClassIdentifier: 
+  _minPhaseSeconds:
+  - 25
+  - 12
+  - 20
+  - 30
+  _maxPhaseSeconds:
+  - 95
+  - 45
+  - 60
+  - 75
+  _peakEntryStress: 0.45
+  _relaxExitStress: 0.22
+  _relaxCooldown: 18
+  _eventStress:
+  - 0.3
+  - -0.15
+  - 0.45
+  - 0.25
+  - -0.2
+  - -0.1
+  - 0.12
+  - 0.05
+  - -0.25
+  - 0.08
+  _stressByProximity:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  _stressByIsolation:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  _isolationDistance: 28
+  _darknessWeight: 0.25
+  _stressHalfLife: 20
+  _standoffDistance:
+  - 22
+  - 0
+  - 60
+  - 90
+  _speedScale:
+  - 0.85
+  - 1.15
+  - 0.9
+  - 0.7
+  _pressure:
+  - 0.55
+  - 1
+  - 0.25
+  - 0.05
+  _isolationPreference: 1.15
+  _composurePreference: 0.85
+  _lowHealthPenalty: -0.6
+  _targetStickiness: 0.3

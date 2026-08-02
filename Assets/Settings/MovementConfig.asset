@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56ccf6c154ca1414abbe74f4285478cc, type: 3}
+  m_Name: MovementConfig
+  m_EditorClassIdentifier: 
+  _speed:
+  - 0
+  - 1.35
+  - 3.1
+  - 5.4
+  _acceleration: 28
+  _deceleration: 34
+  _airControl: 0.25
+  _standHeight: 1.8
+  _crouchHeight: 1.05
+  _radius: 0.35
+  _stepHeight: 0.35
+  _slopeLimit: 50
+  _gravity: -19.6
+  _jumpSpeed: 4.2
+  _collisionMask:
+    serializedVersion: 2
+    m_Bits: 13313
+  _maxStamina: 100
+  _sprintDrainPerSecond: 22
+  _staminaRegenPerSecond: 13
+  _staminaRegenDelay: 1.4
+  _stepInterval:
+  - 0
+  - 0.72
+  - 0.5
+  - 0.34
+  _stepNoiseRadius:
+  - 0
+  - 4.5
+  - 13
+  - 26
+  _stepNoiseIntensity:
+  - 0
+  - 0.22
+  - 0.55
+  - 0.95
+  _landingNoiseRadius: 17

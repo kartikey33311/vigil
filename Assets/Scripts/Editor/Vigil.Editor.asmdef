@@ -1,0 +1,33 @@
+{
+    "name": "Vigil.Editor",
+    "rootNamespace": "Vigil.Editor",
+    "references": [
+        "Vigil.Core",
+        "Vigil.Data",
+        "Vigil.Net",
+        "Vigil.AI",
+        "Vigil.Gameplay",
+        "Vigil.Audio",
+        "Vigil.UI",
+        "Vigil.Bootstrap",
+        "Unity.Netcode.Runtime",
+        "Unity.Networking.Transport",
+        "Unity.InputSystem",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.AI.Navigation",
+        "Unity.AI.Navigation.Editor",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
