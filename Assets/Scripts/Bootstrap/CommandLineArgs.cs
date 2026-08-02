@@ -122,10 +122,20 @@ namespace Vigil.Bootstrap
                 }
             }
 
-            // A headless build with no graphics device is a server whether or not
+            // A headless PLAYER with no graphics device is a server whether or not
             // anyone passed the flag — treating it as a client would install an audio
             // stack and a camera for an audience of nobody.
-            if (!_isDedicatedServer && Application.isBatchMode && SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            //
+            // Explicitly NOT applied in the editor. The test runner runs batchmode
+            // + nographics, so this heuristic made every CI test run look like a
+            // dedicated server: DedicatedServerBootstrap auto-installed, tried to
+            // bind a socket the tests were not expecting, and hung the suite until
+            // it timed out. An editor session is only a server when someone actually
+            // passed -server.
+            if (!_isDedicatedServer
+                && !Application.isEditor
+                && Application.isBatchMode
+                && SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
             {
                 _isDedicatedServer = true;
             }

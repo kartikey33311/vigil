@@ -47,6 +47,15 @@ namespace Vigil.Bootstrap
         static void AutoInstall()
         {
             if (!CommandLineArgs.IsDedicatedServer) return;
+
+            // Second guard, belt and braces. Entering play mode in the editor must
+            // never silently become a dedicated server — it would seize the port,
+            // load a different scene than the developer chose, and (in the test
+            // runner) hang the suite. CommandLineArgs already excludes the editor
+            // from its headless heuristic; this catches an explicit -server flag
+            // left in the editor's command line by a previous batch run.
+            if (Application.isEditor && !Application.isPlaying) return;
+
             if (FindAnyObjectByType<DedicatedServerBootstrap>() != null) return;
 
             GameObject go = new GameObject("[Vigil Dedicated Server]");

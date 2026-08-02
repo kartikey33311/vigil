@@ -73,3 +73,9 @@ ProjectSettings/ServicesProjectSettings.json
 # ---------------------------------------------------------------------------
 /Tools/_local/
 /*.log
+
+# The PlayMode test runner writes a throwaway bootstrap scene into Assets/ and
+# does not always clean it up. Committing one is harmless but it churns the diff
+# on every CI run and confuses anyone reading the asset list.
+/[Aa]ssets/InitTestScene*.unity
+/[Aa]ssets/InitTestScene*.unity.meta
