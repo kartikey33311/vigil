@@ -1,17 +1,4 @@
-// -----------------------------------------------------------------------------
-// Vigil — composition root.
-//
-// The ONE place services are constructed and wired. Everything else resolves from
-// the ServiceContext this owns.
-//
-// It installs itself via [RuntimeInitializeOnLoadMethod] so it exists even when a
-// developer presses Play directly in a gameplay scene. That is not a convenience:
-// a bootstrap that only works if you start from the menu scene costs a team hours
-// every day, and it is the single most common reason people stop using a
-// composition root and go back to singletons.
-// -----------------------------------------------------------------------------
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using Vigil.AI.Agents;
 using Vigil.AI.Director;
@@ -168,7 +155,7 @@ namespace Vigil.Bootstrap
             InstallAudio();
             ValidateConfigs();
 
-            VLog.Info(LogCat.Core, $"Bootstrap complete — {tickRate}Hz simulation, {_scheduler.Count} core tickables.");
+            VLog.Info(LogCat.Core, $"Bootstrap complete â€” {tickRate}Hz simulation, {_scheduler.Count} core tickables.");
         }
 
         /// <summary>
@@ -176,7 +163,7 @@ namespace Vigil.Bootstrap
         /// change into a level.
         ///
         /// <para>Audio is client-side presentation, so it is installed on every peer
-        /// including a pure client — but NOT on a dedicated server, which has no
+        /// including a pure client â€” but NOT on a dedicated server, which has no
         /// listener and would waste a synthesis pass and 24 AudioSources on sound
         /// nobody will ever hear.</para>
         /// </summary>
@@ -208,7 +195,7 @@ namespace Vigil.Bootstrap
             List<string> problems = new List<string>();
             if (!_configs.Validate(problems))
             {
-                VLog.Error(LogCat.Core, $"Config validation failed with {problems.Count} problem(s) — see preceding errors.");
+                VLog.Error(LogCat.Core, $"Config validation failed with {problems.Count} problem(s) â€” see preceding errors.");
             }
         }
 
@@ -241,51 +228,6 @@ namespace Vigil.Bootstrap
             _instance = null;
 
             VLog.Info(LogCat.Core, "Bootstrap torn down.");
-        }
-    }
-
-    /// <summary>
-    /// Drives the fixed simulation clock. Exactly one per session, owned by the
-    /// bootstrap.
-    ///
-    /// <para>This is the only place in the project that reads
-    /// <c>UnityEngine.Time</c> for simulation purposes — everything downstream
-    /// receives <see cref="SimTime"/>. That single choke point is what makes the
-    /// simulation reproducible.</para>
-    /// </summary>
-    [DefaultExecutionOrder(-9000)]
-    public sealed class SimClockRunner : MonoBehaviour
-    {
-        SimClock _clock;
-        TickScheduler _scheduler;
-
-        /// <summary>Ticks executed on the most recent frame. Telemetry for the debug overlay.</summary>
-        public int LastFrameTicks { get; private set; }
-
-        public SimClock Clock => _clock;
-
-        public void Initialise(SimClock clock, TickScheduler scheduler)
-        {
-            _clock = clock;
-            _scheduler = scheduler;
-        }
-
-        void Update()
-        {
-            if (_clock == null || _scheduler == null) return;
-
-            int steps = _clock.BeginFrame(Time.unscaledDeltaTime);
-            LastFrameTicks = steps;
-
-            for (int i = 0; i < steps; i++)
-            {
-                // Step() advances one tick and returns THAT tick's time. Dispatching
-                // several ticks with the same SimTime would silently break every
-                // time-based behaviour on exactly the frames where a hitch made
-                // catch-up necessary.
-                SimTime time = _clock.Step();
-                _scheduler.Tick(in time);
-            }
         }
     }
 }

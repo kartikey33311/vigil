@@ -41,8 +41,12 @@ namespace Vigil.UI
         bool _busy;
         bool _showDebug;
 
+        /// <summary>Seconds of input suppression after the menu appears. See DrawMenu.</summary>
+        const float MenuInputDelay = 0.5f;
+        float _menuShownAt = -1f;
+
         Texture2D _white;
-        GUIStyle _label, _big, _prompt, _title;
+        GUIStyle _label, _big, _prompt, _title, _small;
         bool _stylesReady;
 
         void Awake()
@@ -114,7 +118,15 @@ namespace Vigil.UI
         {
             EnsureStyles();
 
-            if (!InSession) { DrawMenu(); return; }
+            if (!InSession)
+            {
+                DrawMenu();
+                return;
+            }
+
+            // In a session: arm the suppression window again so returning to the menu
+            // cannot inherit a stale click from the frame the session ended on.
+            _menuShownAt = -1f;
 
             DrawHud();
             if (_showDebug) DrawDebug();
@@ -129,6 +141,14 @@ namespace Vigil.UI
             _prompt = new GUIStyle(GUI.skin.label) { fontSize = 17, alignment = TextAnchor.MiddleCenter, normal = { textColor = new Color(1f, 0.95f, 0.82f) } };
             _title = new GUIStyle(GUI.skin.label) { fontSize = 40, alignment = TextAnchor.MiddleCenter, normal = { textColor = new Color(0.75f, 0.15f, 0.12f) } };
 
+            _small = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 15,
+                alignment = TextAnchor.MiddleCenter,
+                wordWrap = true,
+                normal = { textColor = new Color(0.62f, 0.62f, 0.66f) }
+            };
+
             _stylesReady = true;
         }
 
@@ -136,21 +156,41 @@ namespace Vigil.UI
 
         void DrawMenu()
         {
+            // Stamped on the first frame the menu is drawn, and reset whenever a
+            // session ends, so the suppression window applies on every return to menu.
+            if (_menuShownAt < 0f) _menuShownAt = Time.unscaledTime;
+
             Fill(new Rect(0, 0, Screen.width, Screen.height), new Color(0.03f, 0.03f, 0.04f, 1f));
 
-            float w = 340f;
+            // Wide enough that the tagline fits on one line at _big's size. The
+            // previous 340px panel wrapped it to two lines inside a 24px-tall rect,
+            // so the second line was clipped and overlapped the title.
+            float w = 460f;
             float x = (Screen.width - w) * 0.5f;
-            float y = Screen.height * 0.24f;
+            float y = Screen.height * 0.22f;
 
-            GUI.Label(new Rect(x, y, w, 60), "VIGIL", _title);
-            y += 70f;
+            GUI.Label(new Rect(x, y, w, 56), "VIGIL", _title);
+            y += 64f;
 
-            GUI.Label(new Rect(x, y, w, 24), "1-4 player co-operative survival horror", _big);
-            y += 60f;
+            // Height matches the style's own line height rather than a guessed
+            // constant, so it cannot clip if the font or text changes.
+            GUIContent tagline = new GUIContent("1-4 player co-operative survival horror");
+            float taglineHeight = _small.CalcHeight(tagline, w);
+            GUI.Label(new Rect(x, y, w, taglineHeight), tagline, _small);
+            y += taglineHeight + 28f;
 
-            GUI.enabled = !_busy;
+            // Ignore activations for a moment after the menu first appears.
+            //
+            // A mouse event queued before the window existed (or delivered as it
+            // takes focus) was being consumed by the first IMGUI button, so the game
+            // auto-hosted on launch with no click: the menu flashed up, loaded the
+            // level, and the player never got to press JOIN. Suppressing input
+            // briefly is cheap and removes a whole class of stray-click bugs.
+            bool acceptInput = Time.unscaledTime - _menuShownAt > MenuInputDelay;
 
-            if (GUI.Button(new Rect(x, y, w, 42), "HOST SESSION")) StartHost();
+            GUI.enabled = !_busy && acceptInput;
+
+            if (GUI.Button(new Rect(x, y, w, 42), "HOST SESSION") && acceptInput) StartHost();
             y += 52f;
 
             GUI.Label(new Rect(x, y, 70, 24), "Address", _label);
@@ -164,15 +204,15 @@ namespace Vigil.UI
 
             if (!string.IsNullOrEmpty(_statusMessage))
             {
-                GUI.Label(new Rect(x, y, w, 24), _statusMessage, _big);
+                GUI.Label(new Rect(x, y, w, 26), _statusMessage, _small);
                 y += 34f;
             }
 
-            GUI.Label(new Rect(x, y, w, 120),
-                "WASD move  ·  Mouse look  ·  Shift sprint\n" +
-                "Ctrl crouch  ·  E interact  ·  F flashlight\n" +
-                "Esc release cursor  ·  F3 debug",
-                _label);
+            GUI.Label(new Rect(x, y, w, 110),
+                "WASD move   ·   Mouse look   ·   Shift sprint\n" +
+                "Ctrl crouch   ·   E interact   ·   F flashlight\n" +
+                "Esc release cursor   ·   F3 debug",
+                _small);
         }
 
         async void StartHost()

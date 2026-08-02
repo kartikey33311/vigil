@@ -36,6 +36,26 @@ namespace Vigil.Editor.Tools
         [MenuItem("Vigil/Build/Windows Client", priority = 100)]
         public static void BuildWindowsClientMenu() => BuildWindowsClient();
 
+        [MenuItem("Vigil/Build/Windows Client (development)", priority = 103)]
+        public static void BuildWindowsClientDevMenu() => BuildWindowsClientDev();
+
+        /// <summary>
+        /// Development build. Essential for diagnosing a player-only failure:
+        /// VLog.Info and VLog.Warn are [Conditional] on UNITY_EDITOR/DEVELOPMENT_BUILD,
+        /// so a release player logs almost nothing and you are debugging blind.
+        /// </summary>
+        public static void BuildWindowsClientDev()
+        {
+            Run(new BuildPlayerOptions
+            {
+                scenes = Scenes,
+                locationPathName = Path.Combine(OutputRoot(), "WindowsClientDev", "Vigil.exe"),
+                target = BuildTarget.StandaloneWindows64,
+                subtarget = (int)StandaloneBuildSubtarget.Player,
+                options = BuildOptions.Development | BuildOptions.AllowDebugging
+            }, "Windows Client (development)");
+        }
+
         [MenuItem("Vigil/Build/Windows Server (headless)", priority = 101)]
         public static void BuildWindowsServerMenu() => BuildWindowsServer();
 

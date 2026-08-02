@@ -13,6 +13,8 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using Vigil.Core.Diagnostics;
 
 namespace Vigil.Editor.Generation
@@ -47,11 +49,91 @@ namespace Vigil.Editor.Generation
             ConfigureSerialization();
             CreateLayers();
             CreateTags();
+            ConfigureRenderPipeline();
+            ConfigurePlayer();
             ConfigurePhysics();
             ConfigureTime();
 
             AssetDatabase.SaveAssets();
             VLog.Info(LogCat.Core, "Project settings configured.");
+        }
+
+        /// <summary>
+        /// Creates and assigns the URP pipeline asset.
+        ///
+        /// <para>Without this everything renders MAGENTA in a player build. The
+        /// materials are authored against "Universal Render Pipeline/Lit", and
+        /// Shader.Find resolves it in the editor because the shader is simply
+        /// loaded — but with no pipeline asset assigned Unity runs the BUILT-IN
+        /// renderer, strips the URP shader variants from the build, and every
+        /// material falls back to the error shader.</para>
+        ///
+        /// <para>Must run BEFORE materials are created, so the shader they bind to
+        /// is the one that will actually ship.</para>
+        /// </summary>
+        static void ConfigureRenderPipeline()
+        {
+            const string dir = "Assets/Settings";
+            const string pipelinePath = dir + "/VigilURP.asset";
+            const string rendererPath = dir + "/VigilURP_Renderer.asset";
+
+            if (!AssetDatabase.IsValidFolder(dir)) AssetDatabase.CreateFolder("Assets", "Settings");
+
+            UniversalRenderPipelineAsset pipeline = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(pipelinePath);
+
+            if (pipeline == null)
+            {
+                UniversalRendererData rendererData =
+                    AssetDatabase.LoadAssetAtPath<UniversalRendererData>(rendererPath);
+
+                if (rendererData == null)
+                {
+                    rendererData = ScriptableObject.CreateInstance<UniversalRendererData>();
+                    AssetDatabase.CreateAsset(rendererData, rendererPath);
+                }
+
+                pipeline = UniversalRenderPipelineAsset.Create(rendererData);
+                AssetDatabase.CreateAsset(pipeline, pipelinePath);
+
+                VLog.Info(LogCat.Core, "Created URP pipeline asset.");
+            }
+
+            // Both matter: QualitySettings wins per quality level, GraphicsSettings
+            // is the fallback. Setting only one leaves some quality tiers on the
+            // built-in renderer, which is a very confusing partial-magenta bug.
+            GraphicsSettings.defaultRenderPipeline = pipeline;
+            QualitySettings.renderPipeline = pipeline;
+
+            // Real-time shadows are the whole visual language of a horror game — a
+            // flashlight that does not cast shadows removes most of the tension.
+            pipeline.shadowDistance = 60f;
+            pipeline.supportsHDR = true;
+
+            EditorUtility.SetDirty(pipeline);
+            VLog.Info(LogCat.Core, "URP assigned to GraphicsSettings and QualitySettings.");
+        }
+
+        /// <summary>Player window and runtime behaviour.</summary>
+        static void ConfigurePlayer()
+        {
+            PlayerSettings.companyName = "Vigil";
+            PlayerSettings.productName = "Vigil";
+
+            // Borderless fullscreen at the desktop resolution. Alt+Enter still works.
+            PlayerSettings.fullScreenMode = FullScreenMode.FullScreenWindow;
+            PlayerSettings.defaultIsNativeResolution = true;
+            PlayerSettings.resizableWindow = true;
+            PlayerSettings.allowFullscreenSwitch = true;
+
+            // Essential for testing multiplayer on one machine: without it the
+            // unfocused window stops simulating, so the host freezes the moment you
+            // click the client and every session looks broken.
+            PlayerSettings.runInBackground = true;
+
+            PlayerSettings.colorSpace = ColorSpace.Linear;
+            PlayerSettings.visibleInBackground = true;
+
+            VLog.Info(LogCat.Core, "Player settings configured (borderless fullscreen, runs in background).");
         }
 
         /// <summary>
@@ -65,10 +147,65 @@ namespace Vigil.Editor.Generation
         /// </summary>
         static void ConfigureSerialization()
         {
-            if (EditorSettings.serializationMode == SerializationMode.ForceText) return;
+            bool changed = EditorSettings.serializationMode != SerializationMode.ForceText;
 
-            EditorSettings.serializationMode = SerializationMode.ForceText;
-            VLog.Info(LogCat.Core, "Asset serialization set to ForceText (scenes and prefabs are now diffable).");
+            if (changed)
+            {
+                EditorSettings.serializationMode = SerializationMode.ForceText;
+                VLog.Info(LogCat.Core, "Asset serialization set to ForceText.");
+            }
+
+            // Setting the mode only affects assets written AFTER it. Existing assets
+            // keep whatever format they were saved in, which leaves the project in a
+            // MIXED state — and a scene stuck in the old format produced a player
+            // build with a corrupt 'level1' that loaded the menu and then crashed
+            // with "Position out of bounds!". Forcing a reserialize is what actually
+            // makes the setting true of the project rather than just of its future.
+            if (changed || AnyBinaryScenes())
+            {
+                VLog.Info(LogCat.Core, "Reserializing all assets to the current serialization mode...");
+                AssetDatabase.ForceReserializeAssets();
+                AssetDatabase.SaveAssets();
+                VLog.Info(LogCat.Core, "Reserialize complete.");
+            }
+        }
+
+        /// <summary>
+        /// True if any scene on disk is still binary. Text scenes begin with the
+        /// YAML directive; anything else was written in the old format.
+        /// </summary>
+        static bool AnyBinaryScenes()
+        {
+            string[] guids = AssetDatabase.FindAssets("t:Scene");
+
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                if (!path.StartsWith("Assets/")) continue;
+
+                string full = System.IO.Path.GetFullPath(path);
+                if (!System.IO.File.Exists(full)) continue;
+
+                try
+                {
+                    using (System.IO.StreamReader reader = new System.IO.StreamReader(full))
+                    {
+                        char[] head = new char[5];
+                        int read = reader.Read(head, 0, 5);
+                        if (read < 5 || new string(head) != "%YAML")
+                        {
+                            VLog.Warn(LogCat.Core, $"Scene is not text-serialized: {path}");
+                            return true;
+                        }
+                    }
+                }
+                catch (System.Exception)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         static SerializedObject GetTagManager()

@@ -1,12 +1,12 @@
-// -----------------------------------------------------------------------------
-// Vigil — procedural project generation.
+﻿// -----------------------------------------------------------------------------
+// Vigil â€” procedural project generation.
 //
 // This project contains NO hand-authored .unity, .prefab or .asset files, and
 // that is a deliberate engineering decision rather than a shortcut.
 //
 // Hand-written Unity YAML carries GUIDs that will not match the ones Unity assigns
 // on import. The result is references that resolve to null with no error at import
-// time — the failure surfaces later, at runtime, far from its cause, and looks
+// time â€” the failure surfaces later, at runtime, far from its cause, and looks
 // like a code bug. Generating everything through AssetDatabase means the GUIDs are
 // always Unity's own, the repository stays small and diffable, and "regenerate"
 // is always a valid recovery action.
@@ -126,12 +126,12 @@ namespace Vigil.Editor.Generation
             SetObjectRef(antagonist, "_navigation", navigation);
 
             // The registry lives in Resources so GameBootstrap can find it without a
-            // scene reference — which is what lets Play-from-any-scene work.
+            // scene reference â€” which is what lets Play-from-any-scene work.
             VigilConfigRegistry registry = CreateOrLoad<VigilConfigRegistry>(ResourcesDir + "/VigilConfigRegistry.asset");
 
             // Written through ONE SerializedObject rather than nine. Constructing a
             // fresh SerializedObject per field and applying each in turn is both
-            // wasteful and unreliable — each instance snapshots the target on
+            // wasteful and unreliable â€” each instance snapshots the target on
             // construction, so interleaved applies can clobber each other's writes
             // and silently leave fields null.
             SerializedObject registrySo = new SerializedObject(registry);
@@ -217,32 +217,70 @@ namespace Vigil.Editor.Generation
 
             Dictionary<string, Material> result = new Dictionary<string, Material>();
 
-            // Fall back to the built-in Standard shader when URP is not the active
-            // pipeline — a magenta level is a terrible first impression and an
-            // entirely avoidable one.
+            // URP is assigned by VigilProjectSettings before this runs, so URP/Lit is
+            // the shader that will actually ship. The Standard fallback exists only
+            // so a misconfigured project renders SOMETHING rather than magenta.
             Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
 
-            result["Floor"] = CreateMaterial(shader, "M_Floor", new Color(0.16f, 0.16f, 0.18f));
-            result["Wall"] = CreateMaterial(shader, "M_Wall", new Color(0.22f, 0.21f, 0.20f));
-            result["Prop"] = CreateMaterial(shader, "M_Prop", new Color(0.30f, 0.26f, 0.20f));
-            result["Player"] = CreateMaterial(shader, "M_Player", new Color(0.25f, 0.55f, 0.75f));
-            result["Entity"] = CreateMaterial(shader, "M_Entity", new Color(0.35f, 0.05f, 0.06f));
+            if (shader == null)
+            {
+                VLog.Error(LogCat.Core, "No usable lit shader found â€” the level will render magenta.");
+            }
+
+            // Smoothness carries most of the mood here. Wet-looking concrete and
+            // scuffed metal catch the flashlight and give the beam something to do;
+            // fully matte surfaces make a torch-lit corridor read as flat grey paper.
+            result["Floor"] = CreateMaterial(shader, "M_Floor", new Color(0.14f, 0.145f, 0.16f), smoothness: 0.34f, metallic: 0.0f);
+            result["Wall"] = CreateMaterial(shader, "M_Wall", new Color(0.19f, 0.185f, 0.175f), smoothness: 0.18f, metallic: 0.0f);
+            result["Prop"] = CreateMaterial(shader, "M_Prop", new Color(0.31f, 0.25f, 0.16f), smoothness: 0.25f, metallic: 0.15f);
+            result["Metal"] = CreateMaterial(shader, "M_Metal", new Color(0.26f, 0.27f, 0.29f), smoothness: 0.62f, metallic: 0.85f);
+            result["Player"] = CreateMaterial(shader, "M_Player", new Color(0.22f, 0.48f, 0.66f), smoothness: 0.30f, metallic: 0.0f);
+
+            // The entity is deliberately dark and matte: it should read as an absence
+            // rather than an object, and a shiny monster catches light that gives its
+            // position away before the player has earned it.
+            result["Entity"] = CreateMaterial(shader, "M_Entity", new Color(0.10f, 0.035f, 0.04f), smoothness: 0.08f, metallic: 0.0f);
+
+            // Cold green, and deliberately NOT bright enough to clip. At 2.2 it blew
+            // out to flat white, which loses the panel's shape entirely — and a
+            // featureless white rectangle reads as a rendering bug, not an exit sign.
+            // Cold also separates it from the warm generator lights at a glance.
+            result["Emissive"] = CreateMaterial(shader, "M_Emissive", new Color(0.30f, 0.62f, 0.45f),
+                smoothness: 0.55f, metallic: 0.0f, emission: new Color(0.25f, 0.85f, 0.55f) * 0.85f);
 
             return result;
         }
 
-        static Material CreateMaterial(Shader shader, string name, Color color)
+        static Material CreateMaterial(
+            Shader shader, string name, Color color,
+            float smoothness = 0.3f, float metallic = 0f, Color? emission = null)
         {
             string path = $"{MaterialsDir}/{name}.mat";
 
-            Material existing = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (existing != null) return existing;
+            Material mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            bool isNew = mat == null;
 
-            Material mat = new Material(shader);
+            if (isNew) mat = new Material(shader);
+            else if (shader != null && mat.shader != shader) mat.shader = shader;
+
+            // URP uses _BaseColor; the built-in Standard shader uses _Color. Setting
+            // whichever exists keeps the fallback path looking right too.
             if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", color);
             if (mat.HasProperty("_Color")) mat.SetColor("_Color", color);
+            if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", smoothness);
+            if (mat.HasProperty("_Glossiness")) mat.SetFloat("_Glossiness", smoothness);
+            if (mat.HasProperty("_Metallic")) mat.SetFloat("_Metallic", metallic);
 
-            AssetDatabase.CreateAsset(mat, path);
+            if (emission.HasValue)
+            {
+                mat.EnableKeyword("_EMISSION");
+                mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+                if (mat.HasProperty("_EmissionColor")) mat.SetColor("_EmissionColor", emission.Value);
+            }
+
+            if (isNew) AssetDatabase.CreateAsset(mat, path);
+            else EditorUtility.SetDirty(mat);
+
             return mat;
         }
 
@@ -279,7 +317,7 @@ namespace Vigil.Editor.Generation
             head.transform.localPosition = new Vector3(0f, 1.65f, 0f);
 
             // The camera lives in the prefab rather than being created at runtime so
-            // the owner sees through it on the very first frame — spawning it later
+            // the owner sees through it on the very first frame â€” spawning it later
             // produces a visible black frame on join.
             GameObject camGo = new GameObject("PlayerCamera");
             camGo.transform.SetParent(head.transform, false);
@@ -372,7 +410,7 @@ namespace Vigil.Editor.Generation
         ///
         /// <para>NGO derives that hash in <c>OnValidate</c>, which the editor calls
         /// during normal inspector-driven authoring. Objects built purely from code
-        /// never receive it, so every one of them ships with a hash of 0 — and NGO
+        /// never receive it, so every one of them ships with a hash of 0 â€” and NGO
         /// then throws "already contains the same GlobalObjectIdHash value 0"
         /// the moment a second scene-placed NetworkObject registers. The failure
         /// appears at runtime as a spawn exception with no obvious link to the
@@ -429,7 +467,7 @@ namespace Vigil.Editor.Generation
             if (method == null)
             {
                 VLog.Warn(LogCat.Net,
-                    "Could not find NGO's hash generator by reflection — scene NetworkObjects may collide on hash 0.");
+                    "Could not find NGO's hash generator by reflection â€” scene NetworkObjects may collide on hash 0.");
                 return;
             }
 
@@ -474,15 +512,38 @@ namespace Vigil.Editor.Generation
         /// object's PERSISTED GlobalObjectId, so it cannot be computed correctly
         /// until the scene has been written to disk at least once.</para>
         /// </summary>
+        /// <summary>
+        /// Kept as a switch because it is the first thing to bisect if a scene ever
+        /// fails to serialize into a player build. Ruled out as the cause of the
+        /// "level1 is corrupted" crash â€” disabling it changed the scene bytes but
+        /// not the outcome â€” and it fixes a genuine hash-collision bug, so it stays on.
+        /// </summary>
+        const bool RefreshSceneNetworkIds = true;
+
         static void SaveSceneWithNetworkIds(Scene scene, string path)
         {
             EditorSceneManager.SaveScene(scene, path);
 
             Scene reopened = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
-            RefreshNetworkIds(reopened);
+            if (RefreshSceneNetworkIds) RefreshNetworkIds(reopened);
 
             EditorSceneManager.MarkSceneDirty(reopened);
             EditorSceneManager.SaveScene(reopened, path);
+
+            // Force THIS scene to the project's serialization mode.
+            //
+            // Setting EditorSettings.serializationMode earlier in the same session
+            // is not reliably applied to scenes written immediately afterwards â€”
+            // Level_Facility kept coming out binary while Bootstrap, saved a moment
+            // later by this same method, came out text. A scene left in the wrong
+            // format produced a player build whose 'level1' was corrupt: it loaded
+            // the menu, then crashed with "Position out of bounds!".
+            //
+            // Reserializing the specific path is deterministic and costs milliseconds.
+            AssetDatabase.ForceReserializeAssets(new[] { path });
+            AssetDatabase.SaveAssets();
+
+            VLog.Info(LogCat.Core, $"Saved and reserialized scene '{path}'.");
         }
 
         static void CreateNetworkManager(GameObject playerPrefab, GameObject npcPrefab)
@@ -511,13 +572,13 @@ namespace Vigil.Editor.Generation
             if (tickRateProp != null) tickRateProp.uintValue = 30u;
 
             // The antagonist must be in the network prefab list or the server cannot
-            // spawn it — a missing entry produces a runtime error that reads as an
+            // spawn it â€” a missing entry produces a runtime error that reads as an
             // unrelated null reference.
             SerializedProperty prefabsList = so.FindProperty("NetworkConfig.Prefabs.NetworkPrefabsLists");
             if (prefabsList == null)
             {
                 VLog.Warn(LogCat.Net,
-                    "Could not locate NetworkConfig.Prefabs.NetworkPrefabsLists — add the Antagonist prefab " +
+                    "Could not locate NetworkConfig.Prefabs.NetworkPrefabsLists â€” add the Antagonist prefab " +
                     "to the NetworkManager prefab list manually.");
             }
 
@@ -595,7 +656,7 @@ namespace Vigil.Editor.Generation
             CreateExtraction(root.transform, registry, materials, new Vector3(0f, 0f, 0f));
 
             // A couple of always-on lights so the hub is navigable before power is
-            // restored — a level that starts at zero visibility is unplayable, not scary.
+            // restored â€” a level that starts at zero visibility is unplayable, not scary.
             CreatePointLight(root.transform, new Vector3(0f, 3.2f, -12f), 14f, 1.1f, true, "Light_Hub_A");
             CreatePointLight(root.transform, new Vector3(0f, 3.2f, 12f), 14f, 1.1f, true, "Light_Hub_B");
 
@@ -604,7 +665,17 @@ namespace Vigil.Editor.Generation
             surface.collectObjects = CollectObjects.Children;
             surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
             surface.layerMask = VigilProjectSettings.MaskFor("Default", "Ground", "Occluder", "Prop");
-            surface.BuildNavMesh();
+
+            // DELIBERATELY NOT BAKED HERE.
+            //
+            // Calling surface.BuildNavMesh() at edit time attaches a NavMeshData
+            // object that exists only in memory â€” it is not saved as a project asset.
+            // The editor is happy with that, which is why every PlayMode test passed,
+            // but serializing it into a player build produced a corrupt 'level1':
+            // the build loaded the menu and then died with "Position out of bounds!".
+            //
+            // VigilLevelSpawner.BakeNavMesh() bakes at level load instead (~30ms),
+            // which is the correct approach for a procedurally assembled level anyway.
 
             // --- spawns ---
             GameObject playerSpawn = new GameObject("PlayerSpawn");
@@ -682,7 +753,7 @@ namespace Vigil.Editor.Generation
             leaf.transform.SetParent(hinge.transform, false);
             leaf.transform.localPosition = new Vector3(1.7f, 1.8f, 0f);
             leaf.transform.localScale = new Vector3(3.4f, 3.6f, 0.16f);
-            leaf.GetComponent<Renderer>().sharedMaterial = materials["Prop"];
+            leaf.GetComponent<Renderer>().sharedMaterial = materials["Metal"];
             leaf.layer = interactableLayer;
 
             NavMeshObstacle obstacle = root.AddComponent<NavMeshObstacle>();
@@ -714,10 +785,10 @@ namespace Vigil.Editor.Generation
             root.transform.SetParent(parent, false);
             root.transform.position = position + new Vector3(0f, 0.9f, 0f);
             root.transform.localScale = new Vector3(1.5f, 1.8f, 1.1f);
-            root.GetComponent<Renderer>().sharedMaterial = materials["Prop"];
+            root.GetComponent<Renderer>().sharedMaterial = materials["Metal"];
             root.layer = interactableLayer;
 
-            // The light this generator restores. Off until the repair completes —
+            // The light this generator restores. Off until the repair completes â€”
             // that transition is the reward for taking the risk.
             GameObject lightGo = new GameObject(name + "_Light");
             lightGo.transform.SetParent(parent, false);
@@ -751,7 +822,7 @@ namespace Vigil.Editor.Generation
             root.transform.SetParent(parent, false);
             root.transform.position = position + new Vector3(0f, 1.5f, 0f);
             root.transform.localScale = new Vector3(3f, 3f, 0.6f);
-            root.GetComponent<Renderer>().sharedMaterial = materials["Player"];
+            root.GetComponent<Renderer>().sharedMaterial = materials["Emissive"];
             root.layer = interactableLayer;
 
             root.AddComponent<NetworkObject>();
@@ -837,3 +908,4 @@ namespace Vigil.Editor.Generation
         }
     }
 }
+
