@@ -23,6 +23,8 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 using Vigil.AI.Agents;
 using Vigil.Bootstrap;
@@ -629,6 +631,16 @@ namespace Vigil.Editor.Generation
             fill.color = new Color(0.6f, 0.65f, 0.8f);
             lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
 
+            // --- ceiling ---------------------------------------------------------
+            // A facility with no ceiling reads as a hedge maze lit from above, and
+            // it lets the flashlight beam escape into nothing. Enclosure is most of
+            // what makes a corridor frightening.
+            GameObject ceiling = CreateBox(root.transform, "Ceiling",
+                new Vector3(0f, 4.25f, 0f), new Vector3(70f, 0.5f, 70f), materials["Wall"], occluderLayer);
+
+            // --- structural detail ------------------------------------------------
+            BuildDetailPass(root.transform, materials, occluderLayer);
+
             // --- objectives, doors, extraction ----------------------------------
             // Built BEFORE the NavMesh bake so the static geometry is included, but
             // doors carve dynamically via NavMeshObstacle so their state matters at
@@ -657,8 +669,36 @@ namespace Vigil.Editor.Generation
 
             // A couple of always-on lights so the hub is navigable before power is
             // restored â€” a level that starts at zero visibility is unplayable, not scary.
-            CreatePointLight(root.transform, new Vector3(0f, 3.2f, -12f), 14f, 1.1f, true, "Light_Hub_A");
-            CreatePointLight(root.transform, new Vector3(0f, 3.2f, 12f), 14f, 1.1f, true, "Light_Hub_B");
+            // Practical ceiling lights. With a ceiling in place the directional fill
+            // no longer reaches the floor, so THESE are the pre-power lighting. A
+            // level at zero visibility is unplayable rather than frightening: the
+            // player needs enough light to navigate and just little enough to want
+            // the flashlight on. Most of them flicker, which animates the space and
+            // periodically removes light at a moment the player did not choose.
+            Vector3[] practicals =
+            {
+                new Vector3(0f, 3.85f, -22f), new Vector3(0f, 3.85f, -8f),
+                new Vector3(0f, 3.85f, 8f),   new Vector3(0f, 3.85f, 22f),
+                new Vector3(-20f, 3.85f, 0f), new Vector3(20f, 3.85f, 0f),
+                new Vector3(-18f, 3.85f, -18f), new Vector3(18f, 3.85f, 18f),
+                new Vector3(18f, 3.85f, -18f), new Vector3(-18f, 3.85f, 18f)
+            };
+
+            for (int i = 0; i < practicals.Length; i++)
+            {
+                // Intensity 5+ rather than the ~1.5 that looks right in gamma space:
+                // the project renders in LINEAR colour, where low-intensity point
+                // lights all but vanish once fog and ACES tonemapping are applied.
+                GameObject practicalGo = CreatePointLight(root.transform, practicals[i], 20f, 5.5f, true, $"Light_Practical_{i}");
+
+                // Two steady fixtures act as anchors, so the player always has one
+                // reliable landmark to orient by. Everything else fails.
+                if (i == 1 || i == 2) continue;
+
+                FlickeringLight flicker = practicalGo.AddComponent<FlickeringLight>();
+                SetFloat(flicker, "_interval", 1.6f + (i % 4) * 0.9f);
+                SetFloat(flicker, "_dropoutChance", (i % 3) == 0 ? 0.30f : 0.15f);
+            }
 
             // --- navmesh ---
             NavMeshSurface surface = root.AddComponent<NavMeshSurface>();
@@ -684,10 +724,18 @@ namespace Vigil.Editor.Generation
             GameObject npcInstance = (GameObject)PrefabUtility.InstantiatePrefab(npcPrefab);
             npcInstance.transform.position = new Vector3(-18f, 0.1f, -18f);
 
+            Transform[] regionVolumes = CreateRegionVolumes(root.transform);
+            CreateAmbientNpcs(root.transform, materials);
+            ConfigureAtmosphere();
+
             GameObject spawnerGo = new GameObject("[Vigil Level]");
             VigilLevelSpawner spawner = spawnerGo.AddComponent<VigilLevelSpawner>();
             SetObjectRef(spawner, "_antagonist", npcInstance.GetComponent<NpcAgent>());
             SetObjectRef(spawner, "_navMeshSurface", surface);
+
+            Object[] regionObjects = new Object[regionVolumes.Length];
+            for (int i = 0; i < regionVolumes.Length; i++) regionObjects[i] = regionVolumes[i];
+            SetObjectArray(spawner, "_regionVolumes", regionObjects);
 
             // Mission state is a scene-placed NetworkObject, so NGO spawns it
             // automatically with the scene rather than needing a prefab entry.
@@ -697,6 +745,279 @@ namespace Vigil.Editor.Generation
             SetObjectRef(mission, "_gameplay", registry.Gameplay);
 
             SaveSceneWithNetworkIds(scene, LevelScenePath);
+        }
+
+        /// <summary>
+        /// Scene fog and the post-processing stack.
+        ///
+        /// <para>Fog is doing the heaviest lifting of anything in this file. It
+        /// bounds how far the player can see, which turns a large open floor plan
+        /// into a series of small unknown spaces and gives the flashlight beam
+        /// something to be visible AGAINST. Without it, a torch in a dark room lights
+        /// a neat circle and reveals that the room is empty.</para>
+        ///
+        /// <para>The colour grading is deliberately desaturated and cold, and the
+        /// vignette is strong: both narrow attention toward the centre of the screen,
+        /// which is where the flashlight is pointing.</para>
+        /// </summary>
+        static void ConfigureAtmosphere()
+        {
+            RenderSettings.fog = true;
+            RenderSettings.fogMode = FogMode.ExponentialSquared;
+            RenderSettings.fogColor = new Color(0.045f, 0.05f, 0.065f);
+
+            // 0.045 was dense enough to swallow the room at 15m, which removes the
+            // sense of space entirely. This still hides the far wall but leaves the
+            // middle distance legible.
+            RenderSettings.fogDensity = 0.026f;
+
+            // Near-black ambient. The flashlight and the generator lights should be
+            // the only meaningful light sources in the building.
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            // Just enough ambient to read silhouettes at the edge of the flashlight
+            // cone. At true black the player cannot tell a wall from a doorway and
+            // navigation becomes guesswork, which reads as a broken level.
+            RenderSettings.ambientLight = new Color(0.055f, 0.058f, 0.075f);
+            RenderSettings.reflectionIntensity = 0.2f;
+
+            VolumeProfile profile = CreatePostProcessProfile();
+            if (profile == null) return;
+
+            GameObject volumeGo = new GameObject("[Post Processing]");
+            Volume volume = volumeGo.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.priority = 0f;
+            volume.profile = profile;
+        }
+
+        static VolumeProfile CreatePostProcessProfile()
+        {
+            const string path = SettingsDir + "/VigilPostProcess.asset";
+
+            VolumeProfile existing = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
+            if (existing != null) return existing;
+
+            VolumeProfile profile = ScriptableObject.CreateInstance<VolumeProfile>();
+            AssetDatabase.CreateAsset(profile, path);
+
+            Vignette vignette = profile.Add<Vignette>(true);
+            vignette.intensity.overrideState = true;
+            vignette.intensity.value = 0.45f;
+            vignette.smoothness.overrideState = true;
+            vignette.smoothness.value = 0.4f;
+            vignette.color.overrideState = true;
+            vignette.color.value = Color.black;
+
+            FilmGrain grain = profile.Add<FilmGrain>(true);
+            grain.type.overrideState = true;
+            grain.type.value = FilmGrainLookup.Medium2;
+            grain.intensity.overrideState = true;
+            grain.intensity.value = 0.35f;
+
+            ColorAdjustments colour = profile.Add<ColorAdjustments>(true);
+            colour.postExposure.overrideState = true;
+            colour.postExposure.value = 0.15f;
+            colour.contrast.overrideState = true;
+            colour.contrast.value = 22f;
+            colour.saturation.overrideState = true;
+            colour.saturation.value = -28f;
+
+            // Bloom on a very high threshold: only the emissive exit and the
+            // flashlight hotspot should glow. A low threshold makes fog glow, which
+            // washes the whole image out and reads as fake.
+            Bloom bloom = profile.Add<Bloom>(true);
+            bloom.threshold.overrideState = true;
+            bloom.threshold.value = 1.1f;
+            bloom.intensity.overrideState = true;
+            bloom.intensity.value = 0.55f;
+            bloom.scatter.overrideState = true;
+            bloom.scatter.value = 0.62f;
+
+            Tonemapping tonemap = profile.Add<Tonemapping>(true);
+            tonemap.mode.overrideState = true;
+            tonemap.mode.value = TonemappingMode.ACES;
+
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
+
+            VLog.Info(LogCat.Core, "Created post-processing profile (fog, vignette, grain, ACES).");
+            return profile;
+        }
+
+        /// <summary>
+        /// Pipes, shelving, ducting and debris.
+        ///
+        /// <para>Purely visual, but it is what stops the level reading as an empty
+        /// box: silhouette variety at head height gives the flashlight something to
+        /// catch and throw shadows from, and shadows are the entire visual language
+        /// of the genre. Everything here is on the occluder layer so it also breaks
+        /// line of sight for real — the AI benefits from cover it can actually use.</para>
+        /// </summary>
+        static void BuildDetailPass(Transform parent, Dictionary<string, Material> materials, int occluderLayer)
+        {
+            GameObject detail = new GameObject("Detail");
+            detail.transform.SetParent(parent, false);
+
+            Material metal = materials["Metal"];
+            Material prop = materials["Prop"];
+
+            // Ceiling pipe runs. Deterministic placement — a level that reshuffles
+            // every regenerate is impossible to iterate on or compare screenshots of.
+            for (int i = -3; i <= 3; i++)
+            {
+                float z = i * 9f;
+                CreateBox(detail.transform, $"Pipe_Z{i}",
+                    new Vector3(0f, 3.75f, z), new Vector3(64f, 0.28f, 0.28f), metal, occluderLayer);
+            }
+
+            for (int i = -2; i <= 2; i++)
+            {
+                float x = i * 13f;
+                CreateBox(detail.transform, $"Pipe_X{i}",
+                    new Vector3(x, 3.55f, 0f), new Vector3(0.22f, 0.22f, 64f), metal, occluderLayer);
+            }
+
+            // Support columns down the two main corridors.
+            for (int i = -2; i <= 2; i++)
+            {
+                // Skip the centre pair: the extraction panel sits at the origin and a
+                // column directly in front of it hides the one landmark the player
+                // needs to find.
+                if (i == 0) continue;
+
+                CreateBox(detail.transform, $"Column_A{i}",
+                    new Vector3(i * 12f, 2f, -2.5f), new Vector3(0.6f, 4f, 0.6f), metal, occluderLayer);
+                CreateBox(detail.transform, $"Column_B{i}",
+                    new Vector3(i * 12f, 2f, 2.5f), new Vector3(0.6f, 4f, 0.6f), metal, occluderLayer);
+            }
+
+            // Shelving racks inside the rooms: tall, thin, and sight-blocking, which
+            // makes the rooms genuinely searchable rather than open boxes.
+            Vector3[] rackAnchors =
+            {
+                new Vector3(-22f, 0f, -14f), new Vector3(-14f, 0f, -22f),
+                new Vector3(22f, 0f, -14f),  new Vector3(14f, 0f, -22f),
+                new Vector3(-22f, 0f, 14f),  new Vector3(-14f, 0f, 22f),
+                new Vector3(22f, 0f, 14f),   new Vector3(14f, 0f, 22f)
+            };
+
+            for (int i = 0; i < rackAnchors.Length; i++)
+            {
+                Vector3 a = rackAnchors[i];
+                bool alongX = (i % 2) == 0;
+                Vector3 scale = alongX ? new Vector3(5.5f, 2.6f, 0.5f) : new Vector3(0.5f, 2.6f, 5.5f);
+
+                CreateBox(detail.transform, $"Rack_{i}", a + new Vector3(0f, 1.3f, 0f), scale, metal, occluderLayer);
+
+                // A shelf lip breaks the flat slab silhouette.
+                Vector3 lip = alongX ? new Vector3(5.7f, 0.12f, 0.9f) : new Vector3(0.9f, 0.12f, 5.7f);
+                CreateBox(detail.transform, $"RackShelf_{i}", a + new Vector3(0f, 1.9f, 0f), lip, prop, occluderLayer);
+            }
+
+            // Low debris: pallets and drums, waist height, to break up floor space.
+            for (int i = 0; i < 18; i++)
+            {
+                float x = Mathf.Lerp(-28f, 28f, ((i * 5711) % 97) / 97f);
+                float z = Mathf.Lerp(-28f, 28f, ((i * 3391) % 89) / 89f);
+
+                bool drum = (i % 3) == 0;
+                Vector3 scale = drum ? new Vector3(0.9f, 1.2f, 0.9f) : new Vector3(1.8f, 0.35f, 1.4f);
+                float y = drum ? 0.6f : 0.18f;
+
+                CreateBox(detail.transform, $"Debris_{i}",
+                    new Vector3(x, y, z), scale, drum ? metal : prop, occluderLayer);
+            }
+        }
+
+        /// <summary>
+        /// Scatters ambient wildlife through the facility.
+        ///
+        /// <para>These are scene-placed NetworkObjects, so NGO spawns them with the
+        /// scene. They run the same StateMachine engine as the antagonist on a Low
+        /// tick budget, and their only real job is to emit noise the player cannot
+        /// immediately attribute — which is what stops "I heard something" from
+        /// being reliable information.</para>
+        /// </summary>
+        static void CreateAmbientNpcs(Transform parent, Dictionary<string, Material> materials)
+        {
+            GameObject root = new GameObject("Wildlife");
+            root.transform.SetParent(parent, false);
+
+            Vector3[] spawns =
+            {
+                new Vector3(-20f, 0.15f, -20f), new Vector3(-13f, 0.15f, -23f),
+                new Vector3(21f, 0.15f, -19f),  new Vector3(15f, 0.15f, -14f),
+                new Vector3(-19f, 0.15f, 19f),  new Vector3(-23f, 0.15f, 13f),
+                new Vector3(20f, 0.15f, 21f),   new Vector3(6f, 0.15f, -26f),
+                new Vector3(-7f, 0.15f, 26f)
+            };
+
+            int npcLayer = LayerMask.NameToLayer("NPC");
+
+            for (int i = 0; i < spawns.Length; i++)
+            {
+                GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                go.name = $"Rat_{i}";
+                go.transform.SetParent(root.transform, false);
+                go.transform.position = spawns[i];
+                go.transform.localScale = new Vector3(0.26f, 0.18f, 0.42f);
+                go.GetComponent<Renderer>().sharedMaterial = materials["Entity"];
+                go.layer = npcLayer;
+
+                // No collider: rats must not block the player or the character
+                // controller, and they must never be picked up by the NavMesh bake.
+                Object.DestroyImmediate(go.GetComponent<Collider>());
+
+                go.AddComponent<NetworkObject>();
+                go.AddComponent<AmbientNpc>();
+            }
+
+            VLog.Info(LogCat.AI, $"Placed {spawns.Length} ambient NPCs.");
+        }
+
+        /// <summary>
+        /// Region volumes for the coarse navigation graph.
+        ///
+        /// <para>Without these the graph collapses to a single region, and both
+        /// PatrolState and SearchState silently degrade to random wandering inside a
+        /// disc — the room-by-room sweep that makes the antagonist look like it is
+        /// reasoning never happens. This is the difference between "the monster
+        /// wanders" and "the monster is clearing rooms".</para>
+        /// </summary>
+        static Transform[] CreateRegionVolumes(Transform parent)
+        {
+            GameObject root = new GameObject("Regions");
+            root.transform.SetParent(parent, false);
+
+            (string name, Vector3 centre, Vector3 size)[] regions =
+            {
+                ("Region_BoilerRoom",  new Vector3(-18f, 2f, -18f), new Vector3(20f, 4f, 20f)),
+                ("Region_Offices",     new Vector3(18f, 2f, -18f),  new Vector3(20f, 4f, 20f)),
+                ("Region_Maintenance", new Vector3(-18f, 2f, 18f),  new Vector3(20f, 4f, 20f)),
+                ("Region_Storage",     new Vector3(18f, 2f, 18f),   new Vector3(20f, 4f, 20f)),
+                ("Region_Hub",         new Vector3(0f, 2f, 0f),     new Vector3(22f, 4f, 60f)),
+                ("Region_NorthHall",   new Vector3(0f, 2f, 24f),    new Vector3(60f, 4f, 12f)),
+                ("Region_SouthHall",   new Vector3(0f, 2f, -24f),   new Vector3(60f, 4f, 12f))
+            };
+
+            Transform[] result = new Transform[regions.Length];
+
+            for (int i = 0; i < regions.Length; i++)
+            {
+                GameObject go = new GameObject(regions[i].name);
+                go.transform.SetParent(root.transform, false);
+                go.transform.position = regions[i].centre;
+
+                // Extents carried by localScale, with NO collider on purpose. A
+                // trigger collider here would be swept up by the NavMesh bake (which
+                // collects physics colliders) and hit by the interaction raycast
+                // (which queries triggers) — two silent, unrelated-looking bugs.
+                go.transform.localScale = regions[i].size;
+
+                result[i] = go.transform;
+            }
+
+            return result;
         }
 
         static void BuildRoom(Transform parent, Material wall, int layer, Vector3 center, Vector2 size, string name)
@@ -844,10 +1165,25 @@ namespace Vigil.Editor.Generation
             light.type = LightType.Point;
             light.range = range;
             light.intensity = intensity;
-            light.color = new Color(0.85f, 0.87f, 1f);
+
+            // Slightly warm and sickly rather than clean white: institutional
+            // fluorescent, and it makes the cold green exit read as "not part of
+            // the building" at a glance.
+            light.color = new Color(1f, 0.93f, 0.78f);
+            light.shadows = LightShadows.Soft;
+            light.shadowStrength = 0.85f;
             light.enabled = enabled;
 
             return go;
+        }
+
+        static void SetFloat(Object target, string propertyName, float value)
+        {
+            SerializedObject so = new SerializedObject(target);
+            SerializedProperty prop = so.FindProperty(propertyName);
+            if (prop == null) return;
+            prop.floatValue = value;
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         static void SetInt(Object target, string propertyName, int value)

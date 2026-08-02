@@ -135,8 +135,14 @@ namespace Vigil.Bootstrap
                     Transform t = _regionVolumes[i];
                     if (t == null) continue;
 
+                    // Prefer a collider's bounds when one exists, otherwise treat
+                    // localScale as the volume size. The generated volumes carry no
+                    // collider deliberately, so they cannot contaminate the NavMesh
+                    // bake or be hit by interaction raycasts.
                     Collider col = t.GetComponent<Collider>();
-                    Vector3 extents = col != null ? col.bounds.extents : Vector3.one * 5f;
+                    Vector3 extents = col != null ? col.bounds.extents : t.localScale * 0.5f;
+
+                    if (extents.sqrMagnitude < 0.01f) extents = Vector3.one * 5f;
 
                     data.Nodes.Add(new RegionGraphData.Node
                     {

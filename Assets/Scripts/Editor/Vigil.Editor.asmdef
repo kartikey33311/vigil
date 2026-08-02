@@ -17,7 +17,8 @@
         "Unity.Collections",
         "Unity.AI.Navigation",
         "Unity.AI.Navigation.Editor",
-        "Unity.RenderPipelines.Universal.Runtime"
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime"
     ],
     "includePlatforms": [
         "Editor"

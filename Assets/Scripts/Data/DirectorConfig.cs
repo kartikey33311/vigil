@@ -11,20 +11,20 @@ namespace Vigil.Data
     {
         [Header("Phase durations (seconds) â€” indexed by DreadPhase")]
         [SerializeField, Tooltip("Minimum time in each phase. Prevents the curve from degenerating into rapid oscillation.")]
-        float[] _minPhaseSeconds = new float[ConfigCounts.DreadPhases] { 25f, 12f, 20f, 30f };
+        float[] _minPhaseSeconds = new float[ConfigCounts.DreadPhases] { 10f, 18f, 10f, 6f };
 
         [SerializeField, Tooltip("MAXIMUM time in each phase. The Peak entry is the mandatory-disengage clamp â€” it forces Relax even when the entity is winning. Do not raise it to 'make the game harder'; removing the lull removes the fear.")]
-        float[] _maxPhaseSeconds = new float[ConfigCounts.DreadPhases] { 95f, 45f, 60f, 75f };
+        float[] _maxPhaseSeconds = new float[ConfigCounts.DreadPhases] { 30f, 45f, 25f, 14f };
 
         [Header("Stress thresholds (0..1)")]
         [SerializeField, Range(0f, 1f), Tooltip("Aggregate table stress above which Buildup may advance to Peak.")]
-        float _peakEntryStress = 0.45f;
+        float _peakEntryStress = 0.28f;
 
         [SerializeField, Range(0f, 1f), Tooltip("Table stress below which Relax may advance to Fadeout.")]
         float _relaxExitStress = 0.22f;
 
         [SerializeField, Min(0f), Tooltip("Seconds of enforced quiet after Relax before Buildup may start again.")]
-        float _relaxCooldown = 18f;
+        float _relaxCooldown = 8f;
 
         [Header("Stress model")]
         [SerializeField, Tooltip("Stress delta applied per DirectorEvent, indexed by DirectorEvent.")]
