@@ -21,6 +21,53 @@ Three independent blockers, any one of which is fatal:
 
 They are fine for a landing page. They cannot host the game.
 
+## 1b. Playing in a browser (WebGL) — single player only
+
+A browser **cannot be a server**. Netcode for GameObjects is client-only on WebGL:
+there are no UDP sockets, and nothing can bind a listener. Since every gameplay
+object in this project is a `NetworkBehaviour` that only initialises when a server
+spawns it, "just disable networking" does not work either — nothing would spawn.
+
+The solution is `LoopbackTransport`: a `NetworkTransport` that never touches a
+socket. The game starts a **host** on it, so every `NetworkObject` spawns and
+every `OnNetworkSpawn` fires, `IsServer` is true, and the full simulation — AI,
+Director, mission, audio — runs locally with zero network traffic.
+
+```bash
+# Build (10-25 minutes; the emscripten link stage dominates)
+Unity.exe -batchmode -quit -nographics -projectPath . -logFile - \
+  -executeMethod Vigil.Editor.Tools.VigilBuildPipeline.BuildWebGL
+```
+
+Output: `Build/WebGL/`.
+
+### Deploying it
+
+```bash
+cp Tools/webgl/vercel.json Build/WebGL/vercel.json
+cd Build/WebGL && vercel --prod
+```
+
+Any static host works — Vercel, Netlify, GitHub Pages, itch.io.
+
+**Copy `vercel.json` or the page will appear broken.** Unity ships the payload
+pre-compressed as `.gz`. A host that serves those without a `Content-Encoding:
+gzip` header hands the browser raw gzip bytes: the page loads, the loading bar
+never moves, and the console reports a wasm magic-word error. That one missing
+header is the most common reason a perfectly good WebGL build looks dead.
+
+The build also enables `decompressionFallback`, so it still runs on a host that
+ignores the headers entirely — just more slowly.
+
+### Constraints worth knowing
+
+| | |
+|---|---|
+| **Multiplayer** | Unavailable. The menu hides Host/Join on WebGL rather than showing dead buttons. |
+| **Download size** | Tens of MB. First load is slow; `dataCaching` is on so repeat visits are fast. |
+| **Performance** | Single-threaded. The AI budget still applies, but expect lower framerates than the desktop build. |
+| **Audio** | Browsers block audio until first user interaction — sound starts after the first click. |
+
 ## 2. Why not Railway / Render / most PaaS
 
 They run persistent containers, which solves blocker (2) — but they expose

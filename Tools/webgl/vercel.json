@@ -1,0 +1,40 @@
+{
+  "$comment": [
+    "Copy into the ROOT of the WebGL build output (next to index.html) before deploying.",
+    "",
+    "This build uses Gzip compression WITH decompressionFallback enabled, so Unity",
+    "emits .unityweb files and the JavaScript loader decompresses them itself.",
+    "",
+    "CRITICAL: do NOT add 'Content-Encoding: gzip' headers for .unityweb files.",
+    "That is the correct config for RAW .gz output, and it is actively wrong here —",
+    "the browser would decompress the file, then the loader would try to decompress",
+    "it a second time and fail. The result is a black page and an opaque error.",
+    "",
+    "Because the fallback does the work in JS, this build runs on ANY static host",
+    "with no header configuration at all. Everything below is MIME types and caching,",
+    "not correctness."
+  ],
+
+  "headers": [
+    {
+      "source": "/Build/(.*)\\.unityweb",
+      "headers": [
+        { "key": "Content-Type", "value": "application/octet-stream" },
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/Build/(.*)\\.js",
+      "headers": [
+        { "key": "Content-Type", "value": "application/javascript" },
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/TemplateData/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=604800" }
+      ]
+    }
+  ]
+}

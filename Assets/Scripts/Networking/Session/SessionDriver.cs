@@ -173,6 +173,69 @@ namespace Vigil.Net.Session
         }
 
         // =====================================================================
+        // Offline / single player
+        // =====================================================================
+
+        /// <summary>
+        /// Starts a host on a transport that never opens a socket.
+        ///
+        /// <para>This is how single player works, and it is the ONLY mode that runs
+        /// on WebGL: browsers cannot listen for connections, so the real transport
+        /// can never host there. Swapping in <see cref="LoopbackTransport"/> lets
+        /// every NetworkObject spawn and every OnNetworkSpawn fire, so the AI,
+        /// mission and player all initialise exactly as they do online — with no
+        /// networking underneath.</para>
+        /// </summary>
+        public Task<bool> StartOfflineAsync(SessionOptions options)
+        {
+            _options = options;
+
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm == null)
+            {
+                VLog.Error(LogCat.Session, "StartOfflineAsync: no NetworkManager in the scene.");
+                SetState(ConnectionState.Failed);
+                return Task.FromResult(false);
+            }
+
+            try
+            {
+                LoopbackTransport loopback = nm.gameObject.GetComponent<LoopbackTransport>();
+                if (loopback == null) loopback = nm.gameObject.AddComponent<LoopbackTransport>();
+
+                nm.NetworkConfig.NetworkTransport = loopback;
+
+                // No approval callback offline: there is no remote client to approve,
+                // and leaving it armed only risks rejecting our own local player.
+                nm.NetworkConfig.ConnectionApproval = false;
+                nm.ConnectionApprovalCallback = null;
+
+                SetState(ConnectionState.Connecting);
+
+                if (!nm.StartHost())
+                {
+                    VLog.Error(LogCat.Session, "Offline StartHost failed.");
+                    Teardown(DisconnectReason.TransportError);
+                    return Task.FromResult(false);
+                }
+
+                Mode = SessionMode.Offline;
+                _authority?.SetMode(SessionMode.Offline);
+                JoinCode = string.Empty;
+                SetState(ConnectionState.Connected);
+
+                VLog.Info(LogCat.Session, $"Offline session started (seed {options.SessionSeed}).");
+                return Task.FromResult(true);
+            }
+            catch (Exception ex)
+            {
+                VLog.Exception(LogCat.Session, ex);
+                Teardown(DisconnectReason.TransportError);
+                return Task.FromResult(false);
+            }
+        }
+
+        // =====================================================================
         // Client
         // =====================================================================
 

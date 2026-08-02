@@ -95,6 +95,41 @@ namespace Vigil.Editor.Tools
             }, "Windows Dedicated Server");
         }
 
+        [MenuItem("Vigil/Build/WebGL (single player)", priority = 104)]
+        public static void BuildWebGLMenu() => BuildWebGL();
+
+        /// <summary>
+        /// Browser build. SINGLE PLAYER ONLY — a browser cannot listen for
+        /// connections, so Netcode is client-capable at best there and the game
+        /// runs on LoopbackTransport instead.
+        /// </summary>
+        public static void BuildWebGL()
+        {
+            // Gzip with the decompression fallback ON. Brotli is smaller but needs
+            // the host to send Content-Encoding headers; get that wrong and the
+            // player shows a blank page with a console error. The fallback makes the
+            // build work on any static host — including drag-and-drop deploys —
+            // at the cost of a slightly larger download.
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+            PlayerSettings.WebGL.decompressionFallback = true;
+            PlayerSettings.WebGL.linkerTarget = WebGLLinkerTarget.Wasm;
+
+            // Exceptions cost size and speed; "ExplicitlyThrownExceptionsOnly" keeps
+            // our own throws working while dropping the expensive full checks.
+            PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly;
+            PlayerSettings.WebGL.dataCaching = true;
+
+            PlayerSettings.SetManagedStrippingLevel(NamedBuildTarget.WebGL, ManagedStrippingLevel.Low);
+
+            Run(new BuildPlayerOptions
+            {
+                scenes = Scenes,
+                locationPathName = Path.Combine(OutputRoot(), "WebGL"),
+                target = BuildTarget.WebGL,
+                options = BuildOptions.None
+            }, "WebGL");
+        }
+
         public static void BuildLinuxServer()
         {
             Run(new BuildPlayerOptions

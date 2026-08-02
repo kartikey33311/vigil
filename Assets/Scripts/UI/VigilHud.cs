@@ -22,6 +22,7 @@ using Vigil.Core.Services;
 using Vigil.Gameplay.Interaction;
 using Vigil.Gameplay.Player;
 using Vigil.Gameplay.Systems;
+using Vigil.Net.Session;
 
 namespace Vigil.UI
 {
@@ -190,6 +191,19 @@ namespace Vigil.UI
 
             GUI.enabled = !_busy && acceptInput;
 
+            if (GUI.Button(new Rect(x, y, w, 42), "SINGLE PLAYER") && acceptInput) StartOffline();
+            y += 52f;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            // Hidden rather than disabled on WebGL. A browser cannot listen for
+            // connections, so hosting is impossible, and joining would need a
+            // WebSocket server this build has no address for. Dead buttons only
+            // invite a click and the conclusion that the game is broken.
+            GUI.enabled = true;
+            GUI.Label(new Rect(x, y, w, 46),
+                "Multiplayer needs the desktop build:\na browser cannot host a session.", _small);
+            y += 56f;
+#else
             if (GUI.Button(new Rect(x, y, w, 42), "HOST SESSION") && acceptInput) StartHost();
             y += 52f;
 
@@ -197,10 +211,11 @@ namespace Vigil.UI
             _joinAddress = GUI.TextField(new Rect(x + 74, y, w - 74, 24), _joinAddress);
             y += 32f;
 
-            if (GUI.Button(new Rect(x, y, w, 42), "JOIN SESSION")) StartClient();
+            if (GUI.Button(new Rect(x, y, w, 42), "JOIN SESSION") && acceptInput) StartClient();
             y += 60f;
 
             GUI.enabled = true;
+#endif
 
             if (!string.IsNullOrEmpty(_statusMessage))
             {
@@ -213,6 +228,47 @@ namespace Vigil.UI
                 "Ctrl crouch   ·   E interact   ·   F flashlight\n" +
                 "Esc release cursor   ·   F3 debug",
                 _small);
+        }
+
+        /// <summary>
+        /// Single player. Starts a host on a no-op transport so every NetworkObject
+        /// still spawns and the full simulation runs, with no networking at all.
+        /// This is the only mode that works in a browser.
+        /// </summary>
+        async void StartOffline()
+        {
+            SessionDriver driver = Services.TryGet<SessionDriver>();
+            if (driver == null) { _statusMessage = "No session driver."; return; }
+
+            _busy = true;
+            _statusMessage = "Starting...";
+
+            SessionOptions options = SessionOptions.Default;
+            options.SessionName = "Vigil (offline)";
+            options.MaxPlayers = 1;
+            options.SessionSeed = (uint)Random.Range(1, int.MaxValue);
+
+            bool ok = await driver.StartOfflineAsync(options);
+
+            _busy = false;
+            _statusMessage = ok ? "" : "Failed to start.";
+
+            if (!ok) return;
+
+            LoadLevel();
+        }
+
+        void LoadLevel()
+        {
+            NetworkManager nm = NetworkManager.Singleton;
+            if (nm != null && nm.SceneManager != null)
+            {
+                nm.SceneManager.LoadScene(_levelSceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
+            }
+            else
+            {
+                VLog.Error(LogCat.Session, "No NetworkManager.SceneManager - cannot load the level.");
+            }
         }
 
         async void StartHost()
