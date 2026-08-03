@@ -156,7 +156,7 @@ perception woke it, with the mission reading `Restore power 0/3`.
 ### How to play
 
 WASD move · mouse look · Shift sprint · Ctrl crouch · **E** interact ·
-**F** flashlight · Esc release cursor · **F3** debug overlay
+**F** flashlight · Esc release cursor · **~** debug overlay
 
 Host from the main menu, repair 3 generators (hold **E** — loud, staged, and
 progress persists), then reach the exit at the centre of the facility. Doors can
@@ -177,7 +177,7 @@ around them.
 | **Gameplay** | `PlayerCharacter` (server-authoritative movement, `IPerceivable` stealth surface, noise emission, composure, downed/revive), `PlayerCameraRig` (mouse look, gait head-bob, composure-driven breathing sway, FOV kick, shake), `PlayerRegistry` |
 | **Interaction** | Server-revalidated `InteractionSystem`, `Door` (NavMeshObstacle carving, breachable), `Generator` (staged persistent repair, loud), `ExtractionPoint` |
 | **Mission** | `MissionDirector` — objective chain, extraction arming, wipe detection, and the `IDarknessSampler` light model that drives composure drain, AI vision and search preference |
-| **UI** | Host/join menu, crosshair, interaction prompt with hold ring, objective tracker, composure vignette, vitals, F3 debug overlay (IMGUI placeholder — see below) |
+| **UI** | Host/join menu, crosshair, interaction prompt with hold ring, objective tracker, composure vignette, vitals, ~ (backquote) debug overlay (IMGUI placeholder — see below) |
 | **Audio** | Fully procedural — 15 clips synthesised at boot, **zero binary assets**. Pooled voices with priority-based stealing, round-robin occlusion (log-space cutoff + attenuation), subtractive adaptive score, cooldown-gated stingers, composure-driven breathing and heartbeat, footsteps derived from replicated displacement (no per-step bandwidth) |
 | **Bootstrap** | `GameBootstrap`, `SimClockRunner`, `VigilLevelSpawner` (runtime NavMesh bake, region graph, spawning) |
 | **Editor** | Full content generator (configs, materials, prefabs, level, NavMesh, scenes, build settings), project-settings configurator |

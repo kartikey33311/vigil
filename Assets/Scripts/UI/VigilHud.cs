@@ -30,6 +30,9 @@ namespace Vigil.UI
     {
         [SerializeField] string _levelSceneName = "Level_Facility";
 
+        [SerializeField, Tooltip("Toggles the debug overlay. Defaults to the backquote/tilde key: it is the genre convention for a debug console, it is a single keypress, and unlike F-keys it does not need Fn on most laptops.")]
+        KeyCode _debugKey = KeyCode.BackQuote;
+
         ISessionDriver _session;
         IAIDirector _aiDirector;
 
@@ -70,7 +73,7 @@ namespace Vigil.UI
 
         void Update()
         {
-            if (Input.GetKeyDown(KeyCode.F3)) _showDebug = !_showDebug;
+            if (Input.GetKeyDown(_debugKey)) _showDebug = !_showDebug;
 
             // Re-acquire lazily: the local player does not exist until a session
             // starts and the level scene has loaded.
@@ -101,6 +104,10 @@ namespace Vigil.UI
 
             return null;
         }
+
+        /// <summary>Human-readable name of the debug key, so the on-screen hints
+        /// cannot drift out of date when it is rebound.</summary>
+        string DebugKeyLabel => _debugKey == KeyCode.BackQuote ? "~" : _debugKey.ToString();
 
         bool InSession
         {
@@ -226,7 +233,7 @@ namespace Vigil.UI
             GUI.Label(new Rect(x, y, w, 110),
                 "WASD move   ·   Mouse look   ·   Shift sprint\n" +
                 "Ctrl crouch   ·   E interact   ·   F flashlight\n" +
-                "Esc release cursor   ·   F3 debug",
+                "Esc release cursor   ·   " + DebugKeyLabel + " debug",
                 _small);
         }
 
@@ -420,7 +427,7 @@ namespace Vigil.UI
 
             Fill(new Rect(x - 10f, y - 6f, 300f, 150f), new Color(0f, 0f, 0f, 0.65f));
 
-            GUI.Label(new Rect(x, y, 290f, 20f), "-- VIGIL DEBUG (F3) --", _label); y += 22f;
+            GUI.Label(new Rect(x, y, 290f, 20f), "-- VIGIL DEBUG (" + DebugKeyLabel + ") --", _label); y += 22f;
 
             NetworkManager nm = NetworkManager.Singleton;
             if (nm != null)
