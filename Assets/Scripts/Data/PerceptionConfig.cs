@@ -22,13 +22,13 @@ namespace Vigil.Data
         float _focusHalfAngle = 18f;
 
         [SerializeField, Min(1f), Tooltip("Range of the focus cone. The longest distance at which you can be seen at all.")]
-        float _focusRange = 34f;
+        float _focusRange = 42f;
 
         [SerializeField, Range(10f, 110f), Tooltip("Half-angle of the wide mid cone â€” ordinary peripheral awareness.")]
         float _midHalfAngle = 62f;
 
         [SerializeField, Min(1f), Tooltip("Range of the mid cone.")]
-        float _midRange = 18f;
+        float _midRange = 22f;
 
         [SerializeField, Min(0.5f), Tooltip("Near-omnidirectional band. Stops players hugging the monster's blind spot.")]
         float _nearRange = 4.5f;
@@ -47,10 +47,10 @@ namespace Vigil.Data
         AnimationCurve _sightGainByAngle = null;
 
         [SerializeField, Range(0f, 1f), Tooltip("Visibility multiplier in full darkness. 0 makes unlit rooms perfect cover, which trivialises the game.")]
-        float _darknessVisibility = 0.28f;
+        float _darknessVisibility = 0.36f;
 
         [SerializeField, Min(0.05f), Tooltip("Seconds to reach Confirmed from Unaware under ideal conditions (close, lit, dead ahead). Below ~0.4s reads as the AI cheating.")]
-        float _minTimeToDetect = 0.55f;
+        float _minTimeToDetect = 0.40f;
 
         [Header("Non-visual channels")]
         [SerializeField, Tooltip("Awareness contributed per unit of perceived stimulus intensity, indexed by StimulusChannel.")]
@@ -67,7 +67,7 @@ namespace Vigil.Data
 
         [Header("Decay & hysteresis")]
         [SerializeField, Tooltip("Awareness lost per second, indexed by AwarenessLevel (Unaware..Lost).")]
-        float[] _decayPerSecond = new float[ConfigCounts.AwarenessLevels] { 0.30f, 0.16f, 0.10f, 0.07f, 0.05f };
+        float[] _decayPerSecond = new float[ConfigCounts.AwarenessLevels] { 0.24f, 0.11f, 0.065f, 0.042f, 0.032f };
 
         [SerializeField, Range(0f, 0.9f), Tooltip("Decay is multiplied by this while just BELOW a band threshold. Values under 1 create hysteresis and are what stop the monster flip-flopping between states.")]
         float _hysteresisDamping = 0.35f;
@@ -76,7 +76,7 @@ namespace Vigil.Data
         float _hysteresisBand = 0.06f;
 
         [SerializeField, Min(0.5f), Tooltip("Half-life in seconds of positional confidence after contact is lost. MUST stay well below the awareness decay time â€” the monster needs to remain certain you exist while losing track of where you are, because that gap is what produces a wide search instead of a beeline.")]
-        float _confidenceHalfLife = 4.5f;
+        float _confidenceHalfLife = 6.0f;
 
         [Header("Scent")]
         [SerializeField, Min(0f), Tooltip("Seconds a scent marker remains followable. 0 disables scent tracking entirely.")]

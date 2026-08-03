@@ -142,6 +142,7 @@ GameObject:
   - component: {fileID: 5731325556959258212}
   - component: {fileID: 4862718961793588251}
   - component: {fileID: 2109634391409555302}
+  - component: {fileID: 1022397912829571162}
   - component: {fileID: 5861284542857420883}
   m_Layer: 8
   m_Name: Player
@@ -259,6 +260,46 @@ MonoBehaviour:
   _bobFrequency: 9
   _panicSwayAmplitude: 0.028
   _enableHeadBob: 1
+--- !u!114 &1022397912829571162
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3704179289915569625}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6e839605bc90d346898da72e130e4fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _volumePriority: 100
+  _forceEnablePostProcessing: 1
+  _maxComposure: 100
+  _vignetteBase: 0.16
+  _vignetteFromPanic: 0.2
+  _vignetteFromThreat: 0.16
+  _vignetteFromChase: 0.14
+  _vignetteWhenDowned: 0.34
+  _vignetteCeiling: 0.78
+  _chromaticIdle: 0.02
+  _chromaticFromChase: 0.55
+  _chromaticFromThreat: 0.18
+  _chromaticFromPanic: 0.1
+  _lensBreathAmplitude: 0.1
+  _lensWhenDowned: 0.12
+  _breathRateCalm: 13
+  _breathRatePanic: 34
+  _saturationDrain: 62
+  _downedSaturationDrain: 38
+  _downedExposureDrop: 0.75
+  _heartbeatAmplitude: 0.045
+  _heartbeatOnset: 0.22
+  _heartRateCalm: 58
+  _heartRatePanic: 168
+  _chaseAttackSeconds: 0.3
+  _chaseReleaseSeconds: 5.5
+  _threatSlewPerSecond: 2
+  _composureSlew: 3
 --- !u!114 &5861284542857420883
 MonoBehaviour:
   m_ObjectHideFlags: 0

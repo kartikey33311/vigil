@@ -101,6 +101,7 @@ namespace Vigil.AI.Agents
 
         Transform _transform;
         Animator _animator;
+        MonsterAnimator _monster;
 
         public Faction Faction => _archetype != null ? _archetype.Faction : Faction.Entity;
         public ulong EntityId => NetworkObjectId;
@@ -122,6 +123,7 @@ namespace Vigil.AI.Agents
         {
             _transform = transform;
             _animator = GetComponentInChildren<Animator>();
+            _monster = GetComponent<MonsterAnimator>();
             _renderPosition = _transform.position;
         }
 
@@ -376,6 +378,10 @@ namespace Vigil.AI.Agents
             // The generated sample level uses primitives, so no Animator is present.
             // Silently ignoring that is correct: a warning per animation call per tick
             // would bury the log.
+            // Procedural rig first: it is the one that actually exists in the
+            // shipping prefab. The Animator path remains for future rigged art.
+            if (_monster != null && stateName == "AttackStrike") _monster.TriggerLunge();
+
             if (_animator == null || string.IsNullOrEmpty(stateName)) return;
             _animator.CrossFade(stateName, 0.15f);
         }
@@ -503,6 +509,8 @@ namespace Vigil.AI.Agents
 
         void Update()
         {
+            DriveCreaturePose();
+
             if (IsServer) return;
 
             // Exponential smoothing toward the replicated pose. Cheap, stable under
@@ -519,6 +527,49 @@ namespace Vigil.AI.Agents
             if (_animator != null)
             {
                 _animator.SetFloat("Speed", (_netPosition.Value - _renderPosition).magnitude / Mathf.Max(0.0001f, Time.deltaTime));
+            }
+        }
+
+        /// <summary>
+        /// Feeds the procedural rig. Runs on EVERY peer.
+        ///
+        /// <para>Aggression is derived from the REPLICATED awareness byte rather
+        /// than the awareness model, because that model is server-only — driving
+        /// the pose from it would leave remote clients rendering a calm patrol gait
+        /// while the host renders a hunt. The gait is a tell the player reads, so
+        /// it has to be correct on the machine doing the looking.</para>
+        /// </summary>
+        void DriveCreaturePose()
+        {
+            if (_monster == null) return;
+
+            // Unaware .. Confirmed maps onto 0..1. Lost sits high: an entity that
+            // has just lost you is at its most agitated, not its calmest.
+            float aggression;
+            switch ((AwarenessLevel)_netAwareness.Value)
+            {
+                case AwarenessLevel.Confirmed: aggression = 1f; break;
+                case AwarenessLevel.Lost: aggression = 0.8f; break;
+                case AwarenessLevel.Alerted: aggression = 0.65f; break;
+                case AwarenessLevel.Suspicious: aggression = 0.3f; break;
+                default: aggression = 0f; break;
+            }
+
+            _monster.SetAggression(aggression);
+
+            // Head tracking is server-driven: only the server knows where the
+            // target actually is, and the head pose is carried to clients by the
+            // replicated rotation anyway.
+            if (!IsServer || _model == null) return;
+
+            if (_model.TryGetPrimaryTarget(out PerceivedTarget target) &&
+                target.Level >= AwarenessLevel.Suspicious)
+            {
+                _monster.SetLookTarget(target.LastKnownPosition);
+            }
+            else
+            {
+                _monster.ClearLookTarget();
             }
         }
 

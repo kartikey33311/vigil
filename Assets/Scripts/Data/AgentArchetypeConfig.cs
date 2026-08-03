@@ -19,23 +19,23 @@ namespace Vigil.Data
 
         [Header("Locomotion â€” metres/second per intent band")]
         [SerializeField, Tooltip("Indexed by AgentMoveState: Patrol, Investigate, Search, Stalk, Chase. Stalk is deliberately slow â€” stalking is about being heard, not about closing.")]
-        float[] _moveSpeed = new float[ConfigCounts.AgentMoveStates] { 1.5f, 2.1f, 2.4f, 1.7f, 4.6f };
+        float[] _moveSpeed = new float[ConfigCounts.AgentMoveStates] { 1.6f, 2.4f, 2.8f, 1.9f, 5.5f };
 
-        [SerializeField, Min(0.1f)] float _acceleration = 9f;
+        [SerializeField, Min(0.1f)] float _acceleration = 13f;
         [SerializeField, Min(1f), Tooltip("Degrees per second. Low values make the monster commit to turns, which players can exploit â€” that is intended.")]
-        float _turnRateDegrees = 240f;
+        float _turnRateDegrees = 300f;
 
         [Header("Combat")]
-        [SerializeField, Min(0.1f)] float _attackRange = 2.1f;
-        [SerializeField, Min(0f)] float _attackDamage = 55f;
+        [SerializeField, Min(0.1f)] float _attackRange = 2.4f;
+        [SerializeField, Min(0f)] float _attackDamage = 62f;
         [SerializeField, Min(0f), Tooltip("Seconds of windup before the strike lands. This is the player's reaction window; below ~0.35s the attack is undodgeable.")]
-        float _attackWindup = 0.45f;
+        float _attackWindup = 0.38f;
 
         [SerializeField, Min(0f), Tooltip("Seconds the strike is committed. The agent CANNOT turn during this, which is what makes dodging a real skill.")]
         float _attackCommit = 0.30f;
 
         [SerializeField, Min(0f)] float _attackRecover = 0.6f;
-        [SerializeField, Min(0f)] float _attackCooldown = 2.2f;
+        [SerializeField, Min(0f)] float _attackCooldown = 1.5f;
 
         [Header("Grapple")]
         [SerializeField, Min(0f)] float _grappleDuration = 3.5f;

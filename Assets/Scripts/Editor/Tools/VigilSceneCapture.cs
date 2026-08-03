@@ -52,8 +52,55 @@ namespace Vigil.Editor.Tools
             Capture(Path.Combine(outDir, "preview_generator.png"),
                 new Vector3(-11f, 2.4f, -12f), Quaternion.Euler(10f, -140f, 0f), 68f);
 
+            // The creature, lit as the player would see it: down a torch beam in an
+            // otherwise black corridor. Capturing it under flat ambient would show a
+            // shape the player never actually encounters.
+            CaptureCreature(Path.Combine(outDir, "preview_monster.png"));
+
             VLog.Info(LogCat.Core, $"Captured level previews to {outDir}");
             if (Application.isBatchMode) EditorApplication.Exit(0);
+        }
+
+        /// <summary>
+        /// Frames the antagonist prefab under a torch-like spot light.
+        ///
+        /// <para>Instantiates the prefab rather than hunting for it in the scene, so
+        /// the shot is identical every run and does not depend on where the level
+        /// happens to spawn it.</para>
+        /// </summary>
+        static void CaptureCreature(string path)
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Antagonist.prefab");
+            if (prefab == null)
+            {
+                VLog.Warn(LogCat.Core, "No Antagonist prefab to capture.");
+                return;
+            }
+
+            GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            instance.transform.SetPositionAndRotation(new Vector3(0f, 0.05f, 6f), Quaternion.Euler(0f, 180f, 0f));
+
+            GameObject lightGo = new GameObject("~CaptureTorch");
+            lightGo.transform.SetPositionAndRotation(new Vector3(0f, 1.7f, 0f), Quaternion.Euler(6f, 0f, 0f));
+
+            Light torch = lightGo.AddComponent<Light>();
+            torch.type = LightType.Spot;
+            torch.range = 30f;
+            torch.spotAngle = 55f;
+            torch.intensity = 6f;
+            torch.color = new Color(1f, 0.96f, 0.86f);
+            torch.shadows = LightShadows.Soft;
+
+            Capture(path, new Vector3(0f, 1.7f, 0f), Quaternion.Euler(4f, 0f, 0f), 62f);
+
+            // Low side-on shot. The floor line is unambiguous from here, which is the
+            // only reliable way to tell a standing creature from a hovering one.
+            lightGo.transform.SetPositionAndRotation(new Vector3(5f, 1.4f, 6f), Quaternion.Euler(0f, -90f, 0f));
+            Capture(Path.Combine(Path.GetDirectoryName(path), "preview_monster_side.png"),
+                new Vector3(5.5f, 1.3f, 6f), Quaternion.Euler(0f, -90f, 0f), 55f);
+
+            Object.DestroyImmediate(lightGo);
+            Object.DestroyImmediate(instance);
         }
 
         static void Capture(string path, Vector3 position, Quaternion rotation, float fieldOfView)

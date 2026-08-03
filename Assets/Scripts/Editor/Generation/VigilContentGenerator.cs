@@ -66,6 +66,12 @@ namespace Vigil.Editor.Generation
                 GameObject playerPrefab = CreatePlayerPrefab(registry, materials);
                 GameObject npcPrefab = CreateNpcPrefab(registry, materials);
 
+                EditorUtility.DisplayProgressBar("Vigil", "Building creature rig...", 0.6f);
+                // Must run AFTER the prefab exists: it reopens the asset with
+                // LoadPrefabContents, strips the placeholder capsule and builds the
+                // creature hierarchy in its place.
+                MonsterRigBuilder.AddToAntagonistPrefab(PrefabsDir + "/Antagonist.prefab");
+
                 EditorUtility.DisplayProgressBar("Vigil", "Building facility level...", 0.7f);
                 BuildLevelScene(registry, materials, playerPrefab, npcPrefab);
 
@@ -350,6 +356,7 @@ namespace Vigil.Editor.Generation
             SetObjectRef(player, "_flashlight", flashlight);
 
             root.AddComponent<PlayerCameraRig>();
+            root.AddComponent<HorrorEffects>();
 
             InteractionSystem interaction = root.AddComponent<InteractionSystem>();
             SetObjectRef(interaction, "_gameplay", registry.Gameplay);
@@ -388,6 +395,10 @@ namespace Vigil.Editor.Generation
             eye.transform.localPosition = new Vector3(0f, 1.75f, 0.2f);
 
             root.AddComponent<NetworkObject>();
+
+            // Procedural animation. Resolves the rig by name at runtime, so it does
+            // not matter that the rig is attached in a later generation step.
+            root.AddComponent<Vigil.AI.Agents.MonsterAnimator>();
 
             NpcAgent agent = root.AddComponent<NpcAgent>();
             SetObjectRef(agent, "_archetype", registry.Antagonist);

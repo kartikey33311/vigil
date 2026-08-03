@@ -118,16 +118,29 @@ rather than a formality.
 
 ## 9. Difficulty
 
-Difficulty is not a health multiplier. It shifts `DirectorConfig`:
+Difficulty is not a health multiplier. It shifts `DirectorConfig`: longer Peaks,
+shorter lulls, closer stalking. The entity is not made faster or stronger — it is
+simply *around* more.
 
-| Tier | Peak max duration | Relax cooldown | Standoff (Buildup) |
-|---|---|---|---|
-| Standard | 45s | 18s | 22m |
-| Harsh | 60s | 12s | 16m |
-| Vigil | 75s | 6s | 11m |
+### Current tuning (vertical slice)
 
-Longer Peaks, shorter lulls, closer stalking. The entity is not faster or
-stronger — it is simply *around* more.
+The shipping numbers are deliberately more aggressive than the original design,
+because a solo player in a 5-minute session never saw the antagonist otherwise:
+
+| | Value | Why |
+|---|---|---|
+| **Chase speed** | 5.5 m/s vs player sprint 5.4 | Marginally faster on purpose. You cannot outrun it in a straight line, so the answer is doors, corners and breaking line of sight — not holding W. |
+| **Attack windup** | 0.38s | Above the 0.35s validation floor. Still dodgeable, but only if you react. |
+| **Attack cooldown** | 1.5s | Relentless once it reaches you. |
+| **Peak duration** | 26–58s | Long hunts. The mandatory-disengage clamp is untouched. |
+| **Peak entry stress** | 0.22 | A lone player clears this immediately, so escalation starts early. |
+| **Time to detect** | 0.40s | Fast, but still time-based — never instant. |
+| **Awareness decay** | ~25% slower than design | It gives up on you far more reluctantly. |
+
+**What was NOT changed:** the mandatory-disengage clamp still forces `Relax` on a
+timer, the attack still has a commitment window during which the entity cannot
+turn, and detection is still time-based. Those three are what keep it a game
+rather than a coin flip — see `docs/CONTRIBUTING.md` for why they are invariants.
 
 ## 10. Explicit non-goals
 
